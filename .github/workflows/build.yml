@@ -54,11 +54,19 @@ jobs:
 
       - name: Captures d'écran
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: screenshots
           path: screenshots/
           if-no-files-found: ignore
+
+      - name: Build web (pour Cloudflare)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        uses: actions/upload-artifact@v7
+        with:
+          name: webapp
+          path: teavm/build/dist/js/webapp
+          retention-days: 7
 
       - name: Artefact GitHub Pages
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -79,3 +87,122 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
+
+  # ---------------------------------------------------------------- Cloudflare Workers (static assets)
+  # Nécessite les secrets CLOUDFLARE_API_TOKEN et CLOUDFLARE_ACCOUNT_ID (voir docs/DEPLOIEMENT-CLOUDFLARE.md).
+  # Sans ces secrets, les jobs se terminent sans rien déployer.
+
+  cloudflare:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    concurrency:
+      group: cloudflare-production
+      cancel-in-progress: false
+    environment:
+      name: cloudflare
+      url: ${{ steps.deploy.outputs.url }}
+    steps:
+      - name: Vérifier la configuration Cloudflare
+        id: check
+        env:
+          TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          if [ -z "$TOKEN" ]; then
+            echo "::notice title=Cloudflare non configuré::Ajoute les secrets CLOUDFLARE_API_TOKEN et CLOUDFLARE_ACCOUNT_ID pour activer le déploiement."
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v5
+        if: steps.check.outputs.configured == 'true'
+
+      - uses: actions/download-artifact@v8
+        if: steps.check.outputs.configured == 'true'
+        with:
+          name: webapp
+          path: teavm/build/dist/js/webapp
+
+      - uses: actions/setup-node@v5
+        if: steps.check.outputs.configured == 'true'
+        with:
+          node-version: 22
+
+      - name: Déploiement en production
+        id: deploy
+        if: steps.check.outputs.configured == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          npx --yes wrangler@4 deploy --message "main ${GITHUB_SHA::7}" | tee deploy.log
+          url=$(grep -oE 'https://[a-zA-Z0-9.-]+\.workers\.dev' deploy.log | head -1)
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "### Déployé sur Cloudflare : $url" >> "$GITHUB_STEP_SUMMARY"
+
+  cloudflare-preview:
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Vérifier la configuration Cloudflare
+        id: check
+        env:
+          TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          if [ -z "$TOKEN" ]; then
+            echo "::notice title=Cloudflare non configuré::Pas d'aperçu Cloudflare (secrets absents)."
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v5
+        if: steps.check.outputs.configured == 'true'
+
+      - uses: actions/download-artifact@v8
+        if: steps.check.outputs.configured == 'true'
+        with:
+          name: webapp
+          path: teavm/build/dist/js/webapp
+
+      - uses: actions/setup-node@v5
+        if: steps.check.outputs.configured == 'true'
+        with:
+          node-version: 22
+
+      - name: Version d'aperçu (sans toucher à la production)
+        id: preview
+        if: steps.check.outputs.configured == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          npx --yes wrangler@4 versions upload --preview-alias "pr-$PR" --message "PR #$PR ${GITHUB_SHA::7}" | tee upload.log
+          url=$(grep -oE "https://pr-$PR-[a-zA-Z0-9.-]+\.workers\.dev" upload.log | head -1)
+          [ -z "$url" ] && url=$(grep -oE 'https://[a-zA-Z0-9.-]+\.workers\.dev' upload.log | head -1)
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "### Aperçu Cloudflare : $url" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Commentaire sur la PR
+        if: steps.check.outputs.configured == 'true' && steps.preview.outputs.url != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          URL: ${{ steps.preview.outputs.url }}
+        run: |
+          marker="<!-- apercu-cloudflare -->"
+          body="$marker
+          🎮 **Aperçu Cloudflare** de cette PR : $URL
+          (commit ${GITHUB_SHA::7}, mis à jour à chaque push)"
+          id=$(gh api "repos/${{ github.repository }}/issues/$PR/comments" --jq ".[] | select(.body | startswith(\"$marker\")) | .id" | head -1)
+          if [ -n "$id" ]; then
+            gh api -X PATCH "repos/${{ github.repository }}/issues/comments/$id" -f body="$body" > /dev/null
+          else
+            gh api "repos/${{ github.repository }}/issues/$PR/comments" -f body="$body" > /dev/null
+          fi
