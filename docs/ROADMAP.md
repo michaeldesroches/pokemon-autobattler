@@ -9,8 +9,8 @@ Les estimations supposent un dev seul en soirées, environ 10 h par semaine.
 | Étape | Statut |
 | --- | --- |
 | 0. Décision technique | ✅ Fait : libGDX 1.14 + TeaVM (gdx-teavm), desktop LWJGL3 |
-| 1. Moteur de combat façon TFT | À faire (prochaine étape) |
-| 2. Méta-jeu TFT | À faire |
+| 1. Moteur de combat façon TFT | ✅ Fait : hexagones, A*, portée, 23 capacités, statuts |
+| 2. Méta-jeu TFT | À faire (prochaine étape) |
 | 3. Visuel 3/4 | À faire |
 | 4. Lobby à 8 joueurs | À faire |
 | 5. Contenu et équilibrage | En continu |
@@ -22,9 +22,13 @@ Swing + CheerpJ suffisait pour le prototype. Pour quelque chose qui ressemble à
 - Le build web est compilé et déployé sur GitHub Pages par GitHub Actions.
 - Le moteur (`Battle`, `GameState`, `Pokedex`) a été réutilisé tel quel. Seul l'affichage a été réécrit.
 
-## Étape 1 : moteur de combat façon TFT (2 à 3 semaines)
+## Étape 1 : moteur de combat façon TFT (2 à 3 semaines) — fait
 
 C'est le cœur du jeu, à valider en premier.
+
+Ce qui a été livré : grille 7×4 par camp, déplacements A*, portée de 1 à 4 cases selon la lignée, mana (+10 par attaque, +5 par coup reçu), une capacité unique par lignée (23 au total), statuts (brûlure qui réduit les soins, poison, gel, sommeil, paralysie, hâte, provocation, bouclier) et prolongation après 30 s (dégâts +20 % par seconde). Tests JUnit du moteur et bot de simulation à jour.
+
+Plan initial :
 
 - Une grille hexagonale de 7×4 cases par camp.
 - Des déplacements : chaque unité avance vers sa cible avec une recherche de chemin (A*), en gérant les collisions et les cases occupées.

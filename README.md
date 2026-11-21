@@ -13,13 +13,15 @@ Auto battler façon TFT / Super Auto Pets avec des Pokémon de 1re génération,
 
 ## Règles
 
-- Chaque manche : achète des Pokémon dans la boutique (coût 1 à 3 selon le tier), place-les sur le plateau (2 lignes × 4), puis lance le combat. Le combat est automatique.
-- La **ligne du haut** est en première ligne : les attaquants visent d'abord la première ligne adverse, dans la colonne la plus proche. Les Spectre visent toujours l'ennemi le plus affaibli.
+- Chaque manche : achète des Pokémon dans la boutique (coût 1 à 3 selon le tier), place-les sur ton camp du **plateau hexagonal** (4 lignes × 7 cases), puis lance le combat. Le combat est automatique.
+- Au combat, chaque Pokémon **vise l'ennemi le plus proche**, s'en approche (recherche de chemin A*) jusqu'à être à portée, puis attaque. La **portée** dépend de la lignée : 1 case pour le corps à corps, 2 à 4 cases pour les attaquants à distance. Les Spectre visent toujours l'ennemi le plus affaibli.
+- **Mana** : +10 par attaque, +5 par coup reçu. Mana plein → **capacité unique** de la lignée (23 capacités : Giga-Sangsue, Lance-Flammes, Provoc, Tonnerre, Psyko, Blizzard…). Survole un Pokémon pour voir la sienne.
+- **Statuts** : brûlure (dégâts dans le temps, soins réduits de moitié), poison, gel, sommeil (rompu par les dégâts), paralysie (attaque 40 % plus lente), hâte, provocation, bouclier.
+- **Prolongation** : après 30 s de combat, les dégâts augmentent de 20 % par seconde. Au bout de 45 s, le combat est perdu.
 - **3 exemplaires identiques fusionnent** : évolution (Bulbizarre → Herbizarre → Florizarre) ou étoile supplémentaire pour les formes finales (jusqu'à 3★).
 - La taille max de l'équipe augmente toutes les 2 manches (3 → 8).
 - **Économie** : +5 or par manche, +1 par tranche de 10 or (max +5), +1 en cas de victoire, +1 en série de 3+. Relancer la boutique coûte 1 or. Vendre rembourse ce que tu as investi.
 - **Défaite** : tu perds `manche + 2 × Pokémon adverses survivants` PV (60 PV au départ).
-- **Énergie** : +20 par attaque, +6 quand on est touché. À 100, le Pokémon lance son attaque spéciale (x2.5 ; Séisme touche tout le monde ; Psy fait x3 ; Plante se soigne).
 - La **table des types** s'applique (les immunités sont adoucies à x0.25).
 
 ### Synergies (lignées distinctes d'un même type sur le plateau)
@@ -28,7 +30,7 @@ Auto battler façon TFT / Super Auto Pets avec des Pokémon de 1re génération,
 |---|---|---|
 | Normal | 2 / 3 | +20 % / +40 % PV |
 | Feu | 2 / 3 | +25 % / +50 % Attaque |
-| Eau | 2 / 4 | +30 % / +60 % énergie gagnée |
+| Eau | 2 / 4 | +30 % / +60 % mana gagné |
 | Plante | 2 | Régénère 3 % PV/s |
 | Électrik, Insecte | 2 | +30 % vitesse d'attaque |
 | Glace | 2 | 20 % de chance de geler 1 s |
@@ -37,7 +39,7 @@ Auto battler façon TFT / Super Auto Pets avec des Pokémon de 1re génération,
 | Sol | 2 / 3 | +20 % / +40 % PV |
 | Vol | 2 / 3 | 15 % / 30 % d'esquive |
 | Roche | 2 | +35 % Défense |
-| Psy | 1 | Commence avec 50 d'énergie |
+| Psy | 1 | +30 mana au départ |
 | Spectre | 1 | 20 % d'esquive |
 | Dragon | 1 | +25 % PV et Attaque |
 | Acier | 1 | +30 % Défense |

@@ -69,6 +69,17 @@ public final class Canvas {
         batch.draw(assets.circle, cx - rx, height - cy - ry, rx * 2, ry * 2);
     }
 
+    /** Hexagone « pointe en haut » de rayon {@code size} (centre → sommet). */
+    public void hex(float cx, float cy, float size, Color c) {
+        use(c);
+        batch.draw(assets.hex, cx - size, height - cy - size, size * 2, size * 2);
+    }
+
+    public void hexOutline(float cx, float cy, float size, Color c) {
+        use(c);
+        batch.draw(assets.hexOutline, cx - size, height - cy - size, size * 2, size * 2);
+    }
+
     public void image(TextureRegion r, float x, float y, float w, float h) {
         batch.setColor(1, 1, 1, alpha);
         batch.draw(r, x, height - y - h, w, h);

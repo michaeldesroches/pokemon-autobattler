@@ -126,6 +126,17 @@ def gen_ui():
     big = Image.new("RGBA", (128 * s, 128 * s), (0, 0, 0, 0))
     ImageDraw.Draw(big).ellipse((0, 0, 128 * s - 1, 128 * s - 1), fill=(255, 255, 255, 255))
     big.resize((128, 128), Image.LANCZOS).save(os.path.join(ui, "circle.png"))
+    # Hexagone « pointe en haut » inscrit dans un carré 112x112 (largeur = hauteur × √3/2)
+    import math
+    n = 112 * s
+    pts = [(n / 2 + (n / 2 - 1) * math.cos(math.radians(90 + 60 * k)),
+            n / 2 - (n / 2 - 1) * math.sin(math.radians(90 + 60 * k))) for k in range(6)]
+    big = Image.new("RGBA", (n, n), (0, 0, 0, 0))
+    ImageDraw.Draw(big).polygon(pts, fill=(255, 255, 255, 255))
+    big.resize((112, 112), Image.LANCZOS).save(os.path.join(ui, "hex.png"))
+    big = Image.new("RGBA", (n, n), (0, 0, 0, 0))
+    ImageDraw.Draw(big).line(pts + [pts[0]], fill=(255, 255, 255, 255), width=5 * s, joint="curve")
+    big.resize((112, 112), Image.LANCZOS).save(os.path.join(ui, "hex_outline.png"))
     print("ui : ok")
 
 

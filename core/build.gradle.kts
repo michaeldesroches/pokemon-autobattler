@@ -6,6 +6,13 @@ val gdxVersion = providers.gradleProperty("gdxVersion").get()
 
 dependencies {
     api("com.badlogicgames.gdx:gdx:$gdxVersion")
+    testImplementation(platform("org.junit:junit-bom:5.11.4"))
+    testImplementation("org.junit.jupiter:junit-jupiter")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+}
+
+tasks.test {
+    useJUnitPlatform()
 }
 
 // ./gradlew :core:simulate : un bot joue 300 parties (outil d'équilibrage)
