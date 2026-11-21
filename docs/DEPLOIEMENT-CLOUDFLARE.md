@@ -28,6 +28,14 @@ Tant que les secrets ne sont pas configurés, ces deux jobs se terminent en succ
    - `CLOUDFLARE_ACCOUNT_ID` : l'identifiant de l'étape 4.
 6. **Premier déploiement** : relance le dernier workflow de `main` (*Actions* → *Build* → *Re-run all jobs*) ou pousse un commit. Le Worker `pokemon-autobattler` est créé automatiquement au premier `wrangler deploy`. L'URL apparaît dans le résumé du job et dans l'environnement GitHub `cloudflare`.
 
+## Dépannage
+
+| Erreur dans le job `cloudflare` | Cause probable | Correction |
+| --- | --- | --- |
+| `No access to the specified resource` | `CLOUDFLARE_ACCOUNT_ID` ne correspond pas au compte du jeton (souvent un *Zone ID* copié à la place de l'*Account ID*), ou le jeton n'inclut pas ce compte dans « Account Resources » | Compare avec la sortie de l'étape « Diagnostic du jeton » (`wrangler whoami` liste les comptes accessibles et leurs identifiants), puis corrige le secret ou recrée le jeton |
+| `Authentication error` / `Invalid API Token` | Jeton expiré, révoqué ou mal copié | Recrée le jeton et remplace le secret |
+| `You need a workers.dev subdomain` | Sous-domaine `workers.dev` jamais choisi | Tableau de bord → *Workers & Pages* → choisir le sous-domaine |
+
 ## Domaine personnalisé (optionnel)
 
 Si un domaine est géré par Cloudflare, décommente le bloc `routes` de `wrangler.jsonc` :
