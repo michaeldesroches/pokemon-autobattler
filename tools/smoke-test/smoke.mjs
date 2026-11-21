@@ -9,7 +9,7 @@ const outDir = process.argv[3] ?? 'screenshots';
 mkdirSync(outDir, { recursive: true });
 
 // ---- géométrie du plateau en perspective (cf. GameView)
-const HW = 84, SQUASH = 0.56, BOARD_CX = 560, BOARD_Y0 = 126;
+const HW = 84, SQUASH = 0.56, BOARD_CX = 560, BOARD_Y0 = 150;
 const persp = (r) => 0.78 + 0.32 * r / 7;
 const rowY = [BOARD_Y0];
 for (let r = 1; r < 8; r++) rowY.push(rowY[r - 1] + HW * 1.1547 * 0.75 * SQUASH * (persp(r - 1) + persp(r)) / 2);

@@ -39,7 +39,7 @@ public final class GameView extends InputAdapter {
     // ---- Plateau en perspective : 7 colonnes × 8 lignes (0 = fond adverse, 7 = avant du camp joueur)
     private static final float HW = 84f;          // largeur d'un hexagone à l'échelle 1
     private static final float SQUASH = 0.56f;     // aplatissement vertical
-    private static final float BOARD_CX = 560f, BOARD_Y0 = 126f;
+    private static final float BOARD_CX = 560f, BOARD_Y0 = 150f;
     private static final float[] ROW_Y = new float[Hex.ROWS];
 
     static {
