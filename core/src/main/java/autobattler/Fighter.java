@@ -24,6 +24,8 @@ public final class Fighter {
     public double abilityPower = 1, damageAmp = 1, critChance, thorns, omnivamp, manaOnHit, abilityStack;
     public double sitrus, manaRefund, stunChance, armorPen, healOnCast, shieldOnCast, hasteOnCast, startShield;
     public boolean ccImmune, focusSash;
+    /** Classe Assassin active : saute sur l'arrière-ligne adverse au début du combat. */
+    public boolean leapsAtStart;
     public int speedStacks;
     public double speedStackValue;
     public boolean targetsWeakest;
@@ -44,12 +46,19 @@ public final class Fighter {
     public double lunge, flash;
 
     public Fighter(Unit unit, boolean player, int row, int col, Map<PType, Integer> syn) {
+        this(unit, player, row, col, syn, null);
+    }
+
+    public Fighter(Unit unit, boolean player, int row, int col, Map<PType, Integer> syn, Map<Trait, Integer> traits) {
         this.unit = unit;
         this.player = player;
         this.row = row;
         this.col = col;
         Species s = unit.species;
-        range = s.range();
+        int bonusRange = 0;
+        Integer marks = traits == null ? null : traits.get(Trait.MARKSMAN);
+        if (marks != null && marks >= 2 && s.role() == Trait.MARKSMAN) bonusRange = 1;
+        range = s.range() + bonusRange;
         ability = s.ability();
         int st = unit.stars - 1;
         maxHp = (s.hp * 3 + 60) * HP_STAR[st];
@@ -78,6 +87,33 @@ public final class Fighter {
                 case GHOST: dodge = Math.max(dodge, 0.20); break;
                 case DRAGON: maxHp *= 1.25; atk *= 1.25; break;
                 case STEEL: def *= 1.3; break;
+                default: break;
+            }
+        }
+        for (Trait t : s.traits()) {
+            Integer lvlObj = traits == null ? null : traits.get(t);
+            int lvl = lvlObj == null ? 0 : lvlObj;
+            if (lvl == 0) continue;
+            switch (t) {
+                case GUARDIAN: startShield = Math.max(startShield, lvl >= 2 ? 0.35 : 0.20); break;
+                case FIGHTER:
+                    maxHp *= lvl >= 2 ? 1.30 : 1.15;
+                    lifesteal = Math.max(lifesteal, lvl >= 2 ? 0.20 : 0.10);
+                    break;
+                case ASSASSIN:
+                    leapsAtStart = true;
+                    critChance += lvl >= 2 ? 0.50 : 0.30;
+                    damageAmp += lvl >= 2 ? 0.30 : 0.15;
+                    break;
+                case MYSTIC:
+                    abilityPower += lvl >= 2 ? 0.70 : 0.35;
+                    mana += 20;
+                    break;
+                case MARKSMAN: atkSpeed += lvl >= 2 ? 0.30 : 0.20; break;
+                case STARTER:
+                    maxHp *= 1.20;
+                    atk *= 1.20;
+                    break;
                 default: break;
             }
         }

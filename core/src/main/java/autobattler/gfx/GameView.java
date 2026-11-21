@@ -7,8 +7,10 @@ import autobattler.GameState;
 import autobattler.Hex;
 import autobattler.Item;
 import autobattler.PType;
+import autobattler.Pokedex;
 import autobattler.Species;
 import autobattler.Synergies;
+import autobattler.Trait;
 import autobattler.Unit;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputAdapter;
@@ -739,13 +741,13 @@ public final class GameView extends InputAdapter {
 
         // préparation : adversaire puis plateau du joueur, du fond vers l'avant
         List<Object[]> draws = new ArrayList<Object[]>();
-        for (GameState.Placed p : state.enemy) draws.add(new Object[]{p.unit, Hex.fromLocal(false, p.row, p.col), Boolean.FALSE, -1});
+        for (GameState.Placed p : state.enemy) draws.add(new Object[]{p.unit, Hex.fromLocal(false, p.row, p.col), Boolean.FALSE, -1, p.row});
         for (int row = 0; row < GameState.ROWS; row++)
             for (int col = 0; col < GameState.COLS; col++) {
                 int s = GameState.boardSlot(row, col);
                 Unit u = state.board[row][col];
                 if (u == null || (dragging && pressSlot == s)) continue;
-                draws.add(new Object[]{u, slotCell(s), Boolean.TRUE, s});
+                draws.add(new Object[]{u, slotCell(s), Boolean.TRUE, s, row});
             }
         Collections.sort(draws, new Comparator<Object[]>() {
             @Override
@@ -758,10 +760,15 @@ public final class GameView extends InputAdapter {
             int cell = (Integer) d[1];
             boolean mine = (Boolean) d[2];
             int slot = (Integer) d[3];
+            int localRow = (Integer) d[4];
+            boolean misplaced = mine && !u.species.role().suitsRow(localRow);
+            if (misplaced) drawTile(g, cell, g.fade(ORANGE, 0.55f + 0.25f * (float) Math.sin(clock * 4)), true);
             if (mine && selected == slot) drawTile(g, cell, GOLD, true);
             float s = persp(Hex.row(cell));
             drawPokemon(g, u.species, cellX(cell), cellY(cell), s, mine ? 4 : 0, "Idle", clock + cell * 0.37f, true);
             drawStars(g, u.stars, cellX(cell), cellY(cell) - 72 * s);
+            roleBadge(g, u.species.role(), cellX(cell) - 24 * s, cellY(cell) - 58 * s, 7.5f * s);
+            if (misplaced) g.centered(bold(13), "!", cellX(cell) + 24 * s, cellY(cell) - 52 * s, ORANGE);
             drawHeldItems(g, u, cellX(cell), cellY(cell) + 12 * s, 4.5f);
         }
     }
@@ -796,6 +803,7 @@ public final class GameView extends InputAdapter {
         g.rect(bx, by, hpW, 5, f.player ? GOOD : ACCENT);
         g.rect(bx + hpW, by, shW, 5, Canvas.rgb(0xDDE6F5));
         g.rect(bx, by + 6, (float) (bw * Math.min(1, f.mana / f.maxMana)), 2, BLUE);
+        roleBadge(g, f.species().role(), bx - 8, by + 3, 6f);
         if (f.unit.stars > 1) drawStars(g, f.unit.stars, x, by - 3);
         drawHeldItems(g, f.unit, x, y + 12 * s, 3.5f);
 
@@ -879,11 +887,43 @@ public final class GameView extends InputAdapter {
         List<Unit> units = state.boardUnits();
         final Map<PType, Integer> counts = Synergies.counts(units);
         final Map<PType, Integer> levels = Synergies.levels(units);
-        if (counts.isEmpty()) {
-            g.wrap(regular(12), "Place des Pokémon de même type sur le plateau pour activer des bonus.",
+        final Map<Trait, Integer> tCounts = Synergies.traitCounts(units);
+        final Map<Trait, Integer> tLevels = Synergies.traitLevels(units);
+        if (counts.isEmpty() && tCounts.isEmpty()) {
+            g.wrap(regular(12), "Place des Pokémon de même classe ou de même type sur le plateau pour activer des bonus.",
                     LEFT.x + 12, LEFT.y + 46, LEFT.w - 24, 16, MUTED);
             return;
         }
+        float bottom = LEFT.y + LEFT.h - 8;
+        float y = LEFT.y + 42;
+
+        // Classes : actives d'abord, puis par nombre de lignées
+        List<Trait> traits = new ArrayList<Trait>(tCounts.keySet());
+        Collections.sort(traits, new Comparator<Trait>() {
+            @Override
+            public int compare(Trait a, Trait b) {
+                int la = tLevels.containsKey(a) ? 1 : 0, lb = tLevels.containsKey(b) ? 1 : 0;
+                if (la != lb) return lb - la;
+                if (!tCounts.get(a).equals(tCounts.get(b))) return tCounts.get(b) - tCounts.get(a);
+                return a.ordinal() - b.ordinal();
+            }
+        });
+        if (!traits.isEmpty()) {
+            g.text(bold(10), "CLASSES", LEFT.x + 12, y, MUTED);
+            y += 6;
+            for (Trait t : traits) {
+                if (y > bottom - 20) break;
+                Integer lvl = tLevels.get(t);
+                boolean active = lvl != null;
+                float a = active ? 1f : 0.45f;
+                float w = traitPill(g, t, LEFT.x + 10, y, a);
+                g.text(bold(12), tCounts.get(t) + " (" + thresholdsText(t.thresholds()) + ")", LEFT.x + 16 + w, y + 13, active ? TEXT : MUTED);
+                if (active) y = g.wrap(regular(12), t.describe(lvl), LEFT.x + 12, y + 31, LEFT.w - 22, 14, SOFT) - 6;
+                else y += 24;
+            }
+            y += 8;
+        }
+
         List<PType> order = new ArrayList<PType>(counts.keySet());
         Collections.sort(order, new Comparator<PType>() {
             @Override
@@ -893,23 +933,29 @@ public final class GameView extends InputAdapter {
                 return counts.get(b) - counts.get(a);
             }
         });
-        float y = LEFT.y + 36;
+        if (order.isEmpty() || y > bottom - 30) return;
+        g.text(bold(10), "TYPES", LEFT.x + 12, y, MUTED);
+        y += 6;
+        int hidden = 0;
         for (PType t : order) {
-            if (y > LEFT.y + LEFT.h - 30) break;
             Integer lvl = levels.get(t);
             boolean active = lvl != null;
-            int[] th = Synergies.thresholds(t);
-            StringBuilder ths = new StringBuilder();
-            for (int i = 0; i < th.length; i++) ths.append(i == 0 ? "" : " · ").append(th[i]);
-            typeBadge(g, t, LEFT.x + 10, y, active ? 1f : 0.45f);
-            g.text(bold(12), counts.get(t) + "  (" + ths + ")", LEFT.x + 84, y + 13, active ? TEXT : MUTED);
-            if (active) {
-                g.text(regular(12), Synergies.describe(t, lvl), LEFT.x + 12, y + 31, SOFT);
-                y += 42;
-            } else {
-                y += 26;
+            if (y > bottom - (active ? 34 : 20)) {
+                hidden++;
+                continue;
             }
+            typeBadge(g, t, LEFT.x + 10, y, active ? 1f : 0.45f);
+            g.text(bold(12), counts.get(t) + " (" + thresholdsText(Synergies.thresholds(t)) + ")", LEFT.x + 84, y + 13, active ? TEXT : MUTED);
+            if (active) y = g.wrap(regular(12), Synergies.describe(t, lvl), LEFT.x + 12, y + 31, LEFT.w - 22, 14, SOFT) - 6;
+            else y += 24;
         }
+        if (hidden > 0) g.text(regular(12), "+ " + hidden + " autre" + (hidden > 1 ? "s" : ""), LEFT.x + 12, bottom, MUTED);
+    }
+
+    private static String thresholdsText(int[] th) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < th.length; i++) sb.append(i == 0 ? "" : " · ").append(th[i]);
+        return sb.toString();
     }
 
     private void drawInfo(Canvas g) {
@@ -919,6 +965,7 @@ public final class GameView extends InputAdapter {
         Unit unit = null;
         Species sp = null;
         boolean owned = false;
+        int infoSlot = -1;
         int hoverSlot = slotAt(mx, my);
         int hoverShop = shopAt(mx, my);
         boolean prep = state.phase == GameState.Phase.PREP;
@@ -927,9 +974,11 @@ public final class GameView extends InputAdapter {
         } else if (prep && hoverSlot >= 0 && state.get(hoverSlot) != null) {
             unit = state.get(hoverSlot);
             owned = true;
+            infoSlot = hoverSlot;
         } else if (selected >= 0 && state.get(selected) != null) {
             unit = state.get(selected);
             owned = true;
+            infoSlot = selected;
         } else if (prep) {
             int cell = cellAt(mx, my);
             for (GameState.Placed p : state.enemy)
@@ -971,13 +1020,16 @@ public final class GameView extends InputAdapter {
             float hx = x + 76;
             g.text(bold(22), sp.name, hx, y + 20, TEXT);
             if (stars > 1) g.text(bold(15), stars + "★", hx + g.width(bold(22), sp.name) + 8, y + 19, GOLD);
+            g.right(regular(12), "Tier " + sp.tier, RIGHT.x + RIGHT.w - 14, y + 18, MUTED);
             float bx = hx;
             for (PType t : sp.types) {
-                typeBadge(g, t, bx, y + 30, 1f);
+                typeBadge(g, t, bx, y + 26, 1f);
                 bx += 72;
             }
+            bx = hx;
+            for (Trait t : sp.traits()) bx += traitPill(g, t, bx, y + 48, 1f) + 6;
             int range = sp.range();
-            g.text(regular(12), "Tier " + sp.tier + " · " + (range <= 1 ? "corps à corps" : "distance (portée " + range + ")"), hx, y + 62, MUTED);
+            g.text(regular(12), range <= 1 ? "mêlée" : "portée " + range, bx + 2, y + 61, MUTED);
 
             Unit probe = unit != null ? unit : new Unit(sp, 1, sp.tier);
             Fighter f = new Fighter(probe, true, 0, 0, null);
@@ -998,9 +1050,14 @@ public final class GameView extends InputAdapter {
                     : m.species != probe.species ? "3 exemplaires → " + m.species.name
                     : "3 exemplaires → " + m.stars + "★";
             g.text(regular(13), evo, x, ty + 60, SOFT);
+            int hoverRow = owned && GameState.isBoard(infoSlot) ? (infoSlot - 100) / GameState.COLS : -1;
+            if (hoverRow >= 0 && !sp.role().suitsRow(hoverRow))
+                g.text(bold(12), "! " + sp.role().label + " : " + (sp.role().frontline ? "à mettre devant" : "à mettre derrière"),
+                        x, ty + 78, ORANGE);
+
             if (owned) g.right(regular(13), "Revente : " + unit.invested + " or", RIGHT.x + RIGHT.w - 14, ty + 60, GOLD);
             if (unit != null && !unit.items.isEmpty()) {
-                float iy = ty + 84;
+                float iy = ty + 98;
                 for (Item it : unit.items) {
                     drawItemIcon(g, it, x + 9, iy - 4, 9);
                     g.text(regular(12), it.name + " — " + shorten(it.description, 34), x + 24, iy, SOFT);
@@ -1076,6 +1133,7 @@ public final class GameView extends InputAdapter {
             if (selected == i) highlight(g, r, GOLD);
             drawPokemon(g, u.species, r.cx(), r.y + r.h - 16, 0.85f, 0, "Idle", clock + i * 0.3f, true);
             drawStars(g, u.stars, r.cx(), r.y + 13);
+            roleBadge(g, u.species.role(), r.x + 12, r.y + 12, 7f);
             drawHeldItems(g, u, r.cx(), r.y + r.h - 9, 4f);
         }
     }
@@ -1141,7 +1199,10 @@ public final class GameView extends InputAdapter {
                 smallBadge(g, t, tx, r.y + 90);
                 tx += 54;
             }
-            g.text(regular(12), sp.range() <= 1 ? "Corps à corps" : "Distance " + sp.range(), r.x + 10, r.y + 130, MUTED);
+            Trait role = sp.role();
+            roleBadge(g, role, r.x + 17, r.y + 126, 7f);
+            g.text(bold(12), role.label, r.x + 29, r.y + 130, Canvas.rgb(role.rgb).lerp(WHITE, 0.3f));
+            if (Pokedex.isStarter(sp.line)) roleBadge(g, Trait.STARTER, r.x + 37 + g.width(bold(12), role.label), r.y + 126, 6f);
             g.right(bold(15), "● " + sp.tier, r.x + r.w - 10, r.y + 131, state.gold >= sp.tier ? GOLD : ACCENT);
             g.alpha = 1f;
         }
@@ -1231,6 +1292,23 @@ public final class GameView extends InputAdapter {
     private void typeBadge(Canvas g, PType t, float x, float y, float alpha) {
         g.round(x, y, 66, 18, g.fade(Canvas.rgb(t.rgb), alpha));
         g.centered(bold(11), t.label, x + 33, y + 13, g.fade(WHITE, Math.max(0.6f, alpha)));
+    }
+
+    /** Pastille ronde de la couleur de la classe avec son icône. */
+    private void roleBadge(Canvas g, Trait t, float cx, float cy, float r) {
+        g.ellipse(cx, cy, r + 1.5f, r + 1.5f, g.fade(BLACK, 0.7f));
+        g.ellipse(cx, cy, r, r, Canvas.rgb(t.rgb));
+        float ir = r * 0.68f;
+        g.imageTinted(assets.roleIcon(t), cx - ir, cy - ir, ir * 2, ir * 2, WHITE, false);
+    }
+
+    /** Étiquette de classe (icône + nom), renvoie sa largeur. */
+    private float traitPill(Canvas g, Trait t, float x, float y, float alpha) {
+        float w = g.width(bold(11), t.label) + 26;
+        g.round(x, y, w, 18, g.fade(Canvas.rgb(t.rgb), alpha));
+        g.imageTinted(assets.roleIcon(t), x + 4, y + 2, 14, 14, g.fade(WHITE, Math.max(0.6f, alpha)), false);
+        g.text(bold(11), t.label, x + 20, y + 13, g.fade(WHITE, Math.max(0.6f, alpha)));
+        return w;
     }
 
     private void smallBadge(Canvas g, PType t, float x, float y) {

@@ -26,6 +26,18 @@ Auto battler façon TFT / Super Auto Pets avec des Pokémon de 1re génération,
 - **Économie** : +5 or par manche, +1 par tranche de 10 or (max +5), +1 en cas de victoire, +1 en série de 3+. Relancer la boutique coûte 1 or. Vendre rembourse ce que tu as investi (et rend ses objets).
 - **Défaite** : tu perds `manche + 2 × Pokémon adverses survivants` PV (60 PV au départ).
 - La **table des types** s'applique (les immunités sont adoucies à x0.25).
+- **Classes** : chaque lignée a un rôle (Gardien, Combattant, Assassin, Mystique, Tireur), affiché par une icône de couleur sur le plateau, le banc et la boutique. Les Gardiens et Combattants vont devant, les Mystiques et Tireurs derrière ; un contour orange signale un Pokémon mal placé. À partir de 2 Assassins, ils sautent sur l'arrière-ligne adverse au début du combat.
+
+### Classes (lignées distinctes d'une même classe sur le plateau)
+
+| Classe | Lignées | Palier | Bonus (pour les Pokémon de la classe) |
+|---|---|---|---|
+| Gardien | Carapuce, Racaillou, Onix, Ronflex, Otaria | 2 / 4 | Bouclier de 20 % / 35 % PV pendant 5 s au début |
+| Combattant | Machoc, Osselait, Caninos, Ptitard, Minidraco | 2 / 4 | +15 % / +30 % PV, vol de vie 10 % / 20 % |
+| Assassin | Fantominus, Roucool, Rattata, Insécateur | 2 / 3 | Saut sur l'arrière-ligne au début, 30 % / 50 % de critique, +15 % / +30 % dégâts |
+| Mystique | Abra, Magnéti, Lokhlass, Mystherbe, Goupix | 2 / 4 | +35 % / +70 % puissance des capacités, +20 mana au départ |
+| Tireur | Pikachu, Salamèche, Chenipan, Bulbizarre | 2 / 3 | +20 % / +30 % vitesse d'attaque (et +1 portée au 2e palier) |
+| Starter | Bulbizarre, Salamèche, Carapuce, Pikachu | 3 | +20 % PV et Attaque |
 
 ### Synergies (lignées distinctes d'un même type sur le plateau)
 

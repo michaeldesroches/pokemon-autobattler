@@ -73,6 +73,35 @@ public final class Synergies {
         return res;
     }
 
+    /** Nombre de lignées distinctes par classe. */
+    public static Map<Trait, Integer> traitCounts(List<Unit> units) {
+        Map<Trait, Set<String>> lines = new EnumMap<Trait, Set<String>>(Trait.class);
+        for (Unit u : units) {
+            for (Trait t : u.species.traits()) {
+                Set<String> s = lines.get(t);
+                if (s == null) {
+                    s = new HashSet<String>();
+                    lines.put(t, s);
+                }
+                s.add(u.species.line);
+            }
+        }
+        Map<Trait, Integer> res = new EnumMap<Trait, Integer>(Trait.class);
+        for (Map.Entry<Trait, Set<String>> e : lines.entrySet()) res.put(e.getKey(), e.getValue().size());
+        return res;
+    }
+
+    /** Niveau de synergie actif (0 = inactif) pour chaque classe. */
+    public static Map<Trait, Integer> traitLevels(List<Unit> units) {
+        Map<Trait, Integer> res = new EnumMap<Trait, Integer>(Trait.class);
+        for (Map.Entry<Trait, Integer> e : traitCounts(units).entrySet()) {
+            int lvl = 0;
+            for (int th : e.getKey().thresholds()) if (e.getValue() >= th) lvl++;
+            if (lvl > 0) res.put(e.getKey(), lvl);
+        }
+        return res;
+    }
+
     private Synergies() {
     }
 }

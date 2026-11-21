@@ -15,12 +15,14 @@ public final class Assets implements Disposable {
     private static final int[] BOLD_SIZES = {10, 11, 12, 13, 15, 18, 22};
     private static final int[] REGULAR_SIZES = {12, 13};
 
-    private final Texture spritesTex, roundTex, outlineTex, circleTex, hexTex, hexOutlineTex;
+    private final Texture spritesTex, roundTex, outlineTex, circleTex, hexTex, hexOutlineTex, rolesTex;
     private final Map<String, TextureRegion> sprites = new HashMap<String, TextureRegion>();
     private final Map<String, BitmapFont> fonts = new HashMap<String, BitmapFont>();
 
     public final NinePatch round, outline;
     public final TextureRegion circle, white, hex, hexOutline;
+    /** Icônes de classe blanches (à teinter), indexées par {@code Trait.ordinal()}. */
+    private final TextureRegion[] roleIcons;
 
     public Assets() {
         spritesTex = new Texture(Gdx.files.internal("sprites.png"));
@@ -47,6 +49,10 @@ public final class Assets implements Disposable {
         white = new TextureRegion(roundTex, 19, 19, 2, 2);
         hex = new TextureRegion(hexTex);
         hexOutline = new TextureRegion(hexOutlineTex);
+        rolesTex = linear("ui/roles.png");
+        int n = rolesTex.getHeight();
+        roleIcons = new TextureRegion[rolesTex.getWidth() / n];
+        for (int i = 0; i < roleIcons.length; i++) roleIcons[i] = new TextureRegion(rolesTex, i * n, 0, n, n);
 
         for (int s : BOLD_SIZES) loadFont("bold" + s);
         for (int s : REGULAR_SIZES) loadFont("regular" + s);
@@ -64,6 +70,11 @@ public final class Assets implements Disposable {
         f.getData().setScale(0.5f);
         f.setUseIntegerPositions(false);
         fonts.put(name, f);
+    }
+
+    /** Icône (blanche) d'une classe. */
+    public TextureRegion roleIcon(autobattler.Trait t) {
+        return roleIcons[t.ordinal()];
     }
 
     /** Sprite de face ou de dos (repli sur la face si le dos manque), ou null. */
@@ -89,6 +100,7 @@ public final class Assets implements Disposable {
         circleTex.dispose();
         hexTex.dispose();
         hexOutlineTex.dispose();
+        rolesTex.dispose();
         for (BitmapFont f : fonts.values()) f.dispose();
     }
 }

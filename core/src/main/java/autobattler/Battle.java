@@ -16,6 +16,8 @@ public final class Battle {
     public static final double DAMAGE_BASE = 22;
     /** Prolongation : au-delà de ce temps, les dégâts augmentent de 20% par seconde (x2 à 35 s, x4 à 45 s). */
     public static final double OVERTIME = 30;
+    /** Durée des boucliers de début de combat (Gilet Assaut, classe Gardien). */
+    public static final double START_SHIELD_TIME = 5;
 
     public enum Kind { ATTACK, DODGE, FAINT, STATUS, ABILITY, AREA, HEAL }
 
@@ -62,10 +64,32 @@ public final class Battle {
             occupied[f.cell] = true;
             if (f.startShield > 0) {
                 f.shield = f.startShield * f.maxHp;
-                f.shieldTime = 6;
+                f.shieldTime = START_SHIELD_TIME;
+            }
+        }
+        // Classe Assassin : saut sur l'arrière-ligne adverse au tout début du combat
+        for (Fighter f : fighters) {
+            if (!f.leapsAtStart) continue;
+            Fighter best = null;
+            for (Fighter o : fighters) {
+                if (!o.alive || o.player == f.player) continue;
+                if (best == null || depth(o) > depth(best)
+                        || (depth(o) == depth(best) && Math.abs(Hex.col(o.cell) - Hex.col(f.cell)) < Math.abs(Hex.col(best.cell) - Hex.col(f.cell)))) {
+                    best = o;
+                }
+            }
+            if (best != null && dashNextTo(f, best)) {
+                f.moveDur = f.moveT = 0.5;
+                f.target = best;
             }
         }
         checkEnd();
+    }
+
+    /** Profondeur d'un combattant dans son propre camp (0 = première ligne, 3 = fond). */
+    private static int depth(Fighter f) {
+        int r = Hex.row(f.cell);
+        return f.player ? r - Hex.SIDE_ROWS : Hex.SIDE_ROWS - 1 - r;
     }
 
     public double time() {

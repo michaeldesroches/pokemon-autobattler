@@ -14,6 +14,9 @@ public final class Pokedex {
     private static final List<List<Species>> SHOP_BY_TIER = new ArrayList<List<Species>>();
     private static final Map<String, Ability> ABILITY = new java.util.HashMap<String, Ability>();
     private static final Map<String, Integer> RANGE = new java.util.HashMap<String, Integer>();
+    private static final Map<String, Trait> ROLE = new java.util.HashMap<String, Trait>();
+    private static final java.util.Set<String> STARTERS = new java.util.HashSet<String>(
+            java.util.Arrays.asList("bulbi", "sala", "cara", "pika"));
 
     static {
         // --- Tier 1 (coût 1) ---
@@ -100,8 +103,15 @@ public final class Pokedex {
         kit("lokh", 3, Ability.BLIZZARD);
         kit("ronf", 1, Ability.REPOS);
         kit("mini", 2, Ability.OURAGAN);
+        // --- Classe (rôle) de chaque lignée ---
+        role(Trait.GUARDIAN, "cara", "raca", "onix", "ronf", "otar");
+        role(Trait.FIGHTER, "mach", "osse", "cani", "ptit", "mini");
+        role(Trait.ASSASSIN, "fant", "rouc", "ratt", "inse");
+        role(Trait.MYSTIC, "abra", "magn", "lokh", "myst", "goup");
+        role(Trait.MARKSMAN, "pika", "sala", "cheni", "bulbi");
         for (Species s : ALL.values()) {
             if (!ABILITY.containsKey(s.line)) throw new IllegalStateException("Lignée sans kit : " + s.line);
+            if (!ROLE.containsKey(s.line)) throw new IllegalStateException("Lignée sans classe : " + s.line);
         }
 
         for (int i = 0; i < 3; i++) SHOP_BY_TIER.add(new ArrayList<Species>());
@@ -115,6 +125,20 @@ public final class Pokedex {
     private static void add(String key, String name, int dex, int tier, String line,
                             int hp, int atk, int def, int spe, String evo, PType... types) {
         ALL.put(key, new Species(key, name, dex, tier, line, hp, atk, def, spe, evo, types));
+    }
+
+    private static void role(Trait role, String... lines) {
+        for (String l : lines) ROLE.put(l, role);
+    }
+
+    /** Classe (rôle) de la lignée. */
+    public static Trait role(String line) {
+        return ROLE.get(line);
+    }
+
+    /** Vrai si la lignée est un Pokémon de départ (Bulbizarre, Salamèche, Carapuce, Pikachu). */
+    public static boolean isStarter(String line) {
+        return STARTERS.contains(line);
     }
 
     private static void kit(String line, int range, Ability ability) {

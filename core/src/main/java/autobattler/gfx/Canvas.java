@@ -117,8 +117,8 @@ public final class Canvas {
         text(f, s, right - width(f, s), baseline, c);
     }
 
-    /** Texte sur plusieurs lignes, coupé aux espaces. */
-    public void wrap(BitmapFont f, String s, float x, float y, float maxWidth, float lineHeight, Color c) {
+    /** Texte sur plusieurs lignes, coupé aux espaces ; renvoie l'ordonnée de la ligne suivante. */
+    public float wrap(BitmapFont f, String s, float x, float y, float maxWidth, float lineHeight, Color c) {
         StringBuilder line = new StringBuilder();
         for (String w : s.split(" ")) {
             String test = line.length() == 0 ? w : line + " " + w;
@@ -131,5 +131,6 @@ public final class Canvas {
             }
         }
         if (line.length() > 0) text(f, line.toString(), x, y, c);
+        return y + lineHeight;
     }
 }
