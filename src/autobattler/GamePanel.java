@@ -399,7 +399,7 @@ public final class GamePanel extends JPanel {
         // préparation : ennemi en aperçu + plateau du joueur
         for (GameState.Placed p : state.enemy) {
             Rectangle r = cell(visualRow(false, p.row), p.col);
-            drawUnitInCell(g, p.unit, r, true, false, 1, -1);
+            drawUnitInCell(g, p.unit, r, true, false, false, 1, -1);
         }
         for (int row = 0; row < GameState.ROWS; row++)
             for (int col = 0; col < GameState.COLS; col++) {
@@ -407,7 +407,7 @@ public final class GamePanel extends JPanel {
                 Rectangle r = slotRect(s);
                 if (dragging && slotAt(mouse) == s) highlight(g, r, GOLD);
                 Unit u = state.board[row][col];
-                if (u != null && !(dragging && pressSlot == s)) drawUnitInCell(g, u, r, false, selected == s, 1, -1);
+                if (u != null && !(dragging && pressSlot == s)) drawUnitInCell(g, u, r, false, true, selected == s, 1, -1);
             }
     }
 
@@ -416,7 +416,7 @@ public final class GamePanel extends JPanel {
         int dy = (int) (Math.sin(f.lunge * Math.PI) * 14) * (f.player ? -1 : 1);
         Rectangle rr = new Rectangle(r.x, r.y + dy, r.width, r.height);
         float alpha = f.alive ? 1f : 0.18f;
-        drawUnitInCell(g, f.unit, rr, !f.player, false, alpha, f.alive ? f.hp / f.maxHp : 0);
+        drawUnitInCell(g, f.unit, rr, !f.player, f.player, false, alpha, f.alive ? f.hp / f.maxHp : 0);
         if (!f.alive) return;
         // barres PV / énergie
         int bx = rr.x + 10, by = rr.y + 4, bw = rr.width - 20;
@@ -439,21 +439,45 @@ public final class GamePanel extends JPanel {
         }
     }
 
-    private void drawUnitInCell(Graphics2D g, Unit u, Rectangle r, boolean enemy, boolean sel, float alpha, double hp) {
+    private void drawUnitInCell(Graphics2D g, Unit u, Rectangle r, boolean enemy, boolean back, boolean sel, float alpha, double hp) {
         if (sel) highlight(g, r, GOLD);
         java.awt.Composite old = g.getComposite();
         if (alpha < 1f) g.setComposite(java.awt.AlphaComposite.getInstance(java.awt.AlphaComposite.SRC_OVER, alpha));
         int cx = r.x + r.width / 2, cy = r.y + r.height / 2 - 4;
-        drawCreature(g, u.species, cx, cy, 22, enemy);
-        drawStars(g, u.stars, cx, r.y + 26 - (hp >= 0 ? 0 : 6));
+        drawCreature(g, u.species, cx, cy, 22, enemy, back);
+        drawStars(g, u.stars, cx, r.y + (hp >= 0 ? 24 : 14));
         g.setFont(font(Font.BOLD, 11));
         g.setColor(TEXT);
         centered(g, u.species.name, cx, r.y + r.height - 6);
         g.setComposite(old);
     }
 
-    /** Petite créature stylisée : corps aux couleurs du type, yeux tournés vers l'adversaire. */
-    private void drawCreature(Graphics2D g, Species sp, int cx, int cy, int rad, boolean enemy) {
+    /** Sprite PokéAPI (de face, ou de dos pour ton équipe sur le plateau), posé sur un socle aux couleurs du type. */
+    private void drawCreature(Graphics2D g, Species sp, int cx, int cy, int rad, boolean enemy, boolean back) {
+        java.awt.image.BufferedImage img = Sprites.get(sp.dex, back);
+        if (img == null && back) img = Sprites.get(sp.dex, false);
+        if (img == null) {
+            drawBlob(g, sp, cx, cy, rad, enemy);
+            return;
+        }
+        Color c1 = sp.types[0].color;
+        g.setColor(new Color(c1.getRed(), c1.getGreen(), c1.getBlue(), 90));
+        g.fill(new Ellipse2D.Double(cx - rad * 1.1, cy + rad * 0.55, rad * 2.2, rad * 0.75));
+        g.setColor(new Color(0, 0, 0, 60));
+        g.fill(new Ellipse2D.Double(cx - rad * 0.8, cy + rad * 0.7, rad * 1.6, rad * 0.45));
+        double box = rad * 2.6;
+        double scale = Math.min(box / img.getWidth(), box / img.getHeight());
+        scale = Math.min(scale, 3.0);
+        int w = (int) Math.round(img.getWidth() * scale), h = (int) Math.round(img.getHeight() * scale);
+        Object old = g.getRenderingHint(RenderingHints.KEY_INTERPOLATION);
+        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+        int bottom = (int) (cy + rad * 0.95);
+        g.drawImage(img, cx - w / 2, bottom - h, w, h, null);
+        if (old != null) g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, old);
+    }
+
+    /** Créature stylisée de secours si le sprite est introuvable. */
+    private void drawBlob(Graphics2D g, Species sp, int cx, int cy, int rad, boolean enemy) {
         Color c1 = sp.types[0].color;
         Color c2 = sp.types.length > 1 ? sp.types[1].color : c1.darker();
         g.setColor(new Color(0, 0, 0, 70));
@@ -665,7 +689,7 @@ public final class GamePanel extends JPanel {
             roundRect(g, r.x, r.y, r.width, r.height, PANEL);
             if (dragging && slotAt(mouse) == i) highlight(g, r, GOLD);
             Unit u = state.bench[i];
-            if (u != null && !(dragging && pressSlot == i)) drawUnitInCell(g, u, r, false, selected == i, 1, -1);
+            if (u != null && !(dragging && pressSlot == i)) drawUnitInCell(g, u, r, false, false, selected == i, 1, -1);
         }
     }
 
@@ -686,7 +710,7 @@ public final class GamePanel extends JPanel {
             g.setStroke(new BasicStroke(hover ? 3f : 2f));
             g.drawRoundRect(r.x + 1, r.y + 1, r.width - 2, r.height - 2, 14, 14);
             g.setStroke(new BasicStroke(1f));
-            drawCreature(g, sp, r.x + r.width / 2, r.y + 40, 24, false);
+            drawCreature(g, sp, r.x + r.width / 2, r.y + 40, 26, false, false);
             g.setFont(font(Font.BOLD, 13));
             g.setColor(TEXT);
             centered(g, sp.name, r.x + r.width / 2, r.y + 84);
@@ -765,7 +789,7 @@ public final class GamePanel extends JPanel {
         if (!dragging || pressSlot < 0) return;
         Unit u = state.get(pressSlot);
         if (u == null) return;
-        drawCreature(g, u.species, mouse.x, mouse.y, 24, false);
+        drawCreature(g, u.species, mouse.x, mouse.y, 24, false, false);
         drawStars(g, u.stars, mouse.x, mouse.y - 28);
     }
 

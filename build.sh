@@ -7,5 +7,5 @@ rm -rf build
 mkdir -p build/classes
 javac --release 8 -Xlint:-options -encoding UTF-8 -d build/classes src/autobattler/*.java
 printf 'Main-Class: autobattler.Main\n' > build/MANIFEST.MF
-jar cfm autobattler.jar build/MANIFEST.MF -C build/classes .
+jar cfm autobattler.jar build/MANIFEST.MF -C build/classes . -C res .
 echo "OK : autobattler.jar"

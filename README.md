@@ -47,6 +47,8 @@ java -jar autobattler.jar                      # lance le jeu en desktop
 java -cp autobattler.jar autobattler.Sim 300   # un bot joue 300 parties (équilibrage)
 ```
 
+Les sprites viennent de [PokéAPI/sprites](https://github.com/PokeAPI/sprites) et sont embarqués dans le jar (`res/sprites/front` et `res/sprites/back`) : aucun appel réseau pendant le jeu.
+
 Le code cible Java 8 (`--release 8`) pour rester compatible avec tous les runtimes CheerpJ. Après une modification, relance `./build.sh` et commite le nouveau `autobattler.jar` : c'est lui que la page charge.
 
 | Fichier | Rôle |
@@ -57,6 +59,7 @@ Le code cible Java 8 (`--release 8`) pour rester compatible avec tous les runtim
 | `Synergies` | Comptage et paliers des synergies de type |
 | `Fighter`, `Battle` | Moteur de combat déterministe (pas fixe de 50 ms) |
 | `GameState` | Économie, boutique, banc/plateau, génération des adversaires |
+| `Sprites` | Chargement des sprites embarqués (rognage des marges) |
 | `GamePanel`, `Main` | Rendu Java2D et interactions souris |
 | `Sim` | Bot de test pour l'équilibrage |
 
