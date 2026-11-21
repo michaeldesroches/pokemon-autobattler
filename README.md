@@ -2,7 +2,7 @@
 
 Auto battler façon TFT / Super Auto Pets avec des Pokémon de 1re génération, écrit en **Java** avec **[libGDX](https://libgdx.com/)**. Jouable sur desktop et **dans le navigateur** grâce à [gdx-teavm](https://github.com/xpenatan/gdx-teavm) (Java compilé en JavaScript par TeaVM).
 
-**Jouer en ligne :** https://michaeldesroches.github.io/pokemon-autobattler/ (et sur Cloudflare une fois configuré, voir [docs/DEPLOIEMENT-CLOUDFLARE.md](docs/DEPLOIEMENT-CLOUDFLARE.md))
+**Jouer en ligne :** https://pokemon-autobattler.michael-desroches-perso.workers.dev (accès réservé via Cloudflare Access, voir [docs/DEPLOIEMENT-CLOUDFLARE.md](docs/DEPLOIEMENT-CLOUDFLARE.md))
 
 ## Lancer le jeu
 

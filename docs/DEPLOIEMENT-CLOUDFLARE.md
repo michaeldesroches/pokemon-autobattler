@@ -2,7 +2,7 @@
 
 Le build web (TeaVM) est un site 100 % statique. Il est déployé sur **Cloudflare Workers en mode « static assets »** : pas de code de Worker, Cloudflare sert directement les fichiers depuis son CDN. La configuration est dans [`wrangler.jsonc`](../wrangler.jsonc).
 
-GitHub Pages reste en place : les deux déploiements tournent en parallèle et servent le même build.
+C'est le seul hébergement du jeu : GitHub Pages a été retiré pour que le jeu ne soit pas accessible publiquement. L'accès est filtré par **Cloudflare Access** (voir plus bas).
 
 ## Ce qui est automatisé
 
@@ -27,6 +27,14 @@ Tant que les secrets ne sont pas configurés, ces deux jobs se terminent en succ
    - `CLOUDFLARE_API_TOKEN` : le jeton de l'étape 3 ;
    - `CLOUDFLARE_ACCOUNT_ID` : l'identifiant de l'étape 4.
 6. **Premier déploiement** : relance le dernier workflow de `main` (*Actions* → *Build* → *Re-run all jobs*) ou pousse un commit. Le Worker `pokemon-autobattler` est créé automatiquement au premier `wrangler deploy`. L'URL apparaît dans le résumé du job et dans l'environnement GitHub `cloudflare`.
+
+## Restreindre l'accès avec Cloudflare Access
+
+1. Tableau de bord Cloudflare → *Workers & Pages* → Worker `pokemon-autobattler` → *Settings* → *Domains & Routes*.
+2. Sur **workers.dev**, clique sur *Enable Cloudflare Access* ; fais de même sur **Preview URLs** pour protéger les aperçus des PR.
+3. *Manage Cloudflare Access* : indique les adresses e-mail autorisées (connexion par code à usage unique envoyé par e-mail).
+
+Rien à changer dans le dépôt ni dans la CI : le déploiement continue normalement, seul l'accès au site est filtré.
 
 ## Dépannage
 
