@@ -39,7 +39,7 @@ FONTS = {
     "bold18": (BOLD, 18),
     "bold22": (BOLD, 22),
 }
-CHARSET = "".join(chr(c) for c in range(32, 127)) + "".join(chr(c) for c in range(160, 256)) + "’…—·★●→«»œŒ"
+CHARSET = "".join(chr(c) for c in range(32, 127)) + "".join(chr(c) for c in range(160, 256)) + "’…—·•★●→«»œŒ"
 
 
 def find_font(name):
