@@ -49,7 +49,7 @@ jobs:
         run: |
           for f in screenshots/*.png; do
             [ -f "$f" ] || continue
-            echo "::group::$f"; echo "BEGIN $f"; base64 -w0 "$f"; echo; echo "END $f"; echo "::endgroup::"
+            echo "::group::$f"; echo "BEGIN $f"; base64 -w 2000 "$f"; echo "END $f"; echo "::endgroup::"
           done
 
       - name: Captures d'écran
