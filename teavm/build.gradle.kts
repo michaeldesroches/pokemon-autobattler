@@ -19,8 +19,8 @@ gdxTeaVM {
     webDefaults {
         mainClass = "autobattler.teavm.WebLauncher"
         htmlTitle = "Pokémon Auto Battler"
-        htmlWidth = 1000
-        htmlHeight = 690
+        htmlWidth = 1280
+        htmlHeight = 720
     }
 
     js {

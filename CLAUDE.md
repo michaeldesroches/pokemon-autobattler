@@ -12,9 +12,10 @@ Objectif long terme : une version façon TFT (grille hexagonale, déplacements, 
 
 - Étape 0 faite : passage de Swing + CheerpJ à libGDX + TeaVM (PR #1).
 - Étape 1 faite : moteur façon TFT (PR #2) — champ de bataille hexagonal 7×8 (4 lignes par camp), déplacements A*, portée par lignée (1 à 4 cases), mana et une capacité unique par lignée (23), statuts (brûlure, poison, gel/étourdissement, sommeil, paralysie, hâte, provocation, bouclier), prolongation après 30 s.
-- Étape 2 faite : méta-jeu (PR `etape-2-meta-jeu`) — niveau/XP (niveau 3 à 9 = taille d'équipe, fixe les chances de tier), pool partagé (18/14/10 exemplaires par Pokémon de base selon le tier), objets (6 composants → 21 objets combinés, 3 max par Pokémon, inventaire de 10), manches contre des Pokémon sauvages (2, 6, 10, 14…) qui donnent des composants.
+- Étape 2 faite : méta-jeu (PR #3) — niveau/XP (niveau 3 à 9 = taille d'équipe, fixe les chances de tier), pool partagé (18/14/10 exemplaires par Pokémon de base selon le tier), objets (6 composants → 21 objets combinés, 3 max par Pokémon, inventaire de 10), manches contre des Pokémon sauvages (2, 6, 10, 14…) qui donnent des composants.
 - Gameplay : boutique 3 tiers, banc 8 places, fusion par 3 (évolution puis étoiles, objets et exemplaires conservés), économie avec intérêts et séries, adversaires générés selon la manche (avec objets à partir de la manche 5), 16 synergies de type.
-- Reporté : classes (Starter…) et carrousel. Prochaine étape : étape 3 (visuel 3/4) ou étape 4 (lobby avec 7 bots) — voir `docs/ROADMAP.md`.
+- Étape 3 faite : visuel (PR `etape-3-visuel`) — interface 16:9 (1280×720), plateau hexagonal en perspective, sprites animés PMDCollab (Idle/Walk/Attack/Hurt/Sleep, 8 directions dont 3 par symétrie) orientés vers leur cible, portraits, particules par type, tremblement d'écran, bruitages et musique générés par script, bouton son.
+- Reporté : classes (Starter…), carrousel, portraits des autres joueurs (avec le lobby). Prochaine étape : étape 4 (lobby à 8 joueurs, d'abord 7 bots) — voir `docs/ROADMAP.md`.
 
 ## Structure
 
@@ -22,11 +23,13 @@ Objectif long terme : une version façon TFT (grille hexagonale, déplacements, 
 | --- | --- |
 | `core/src/main/java/autobattler/` | Logique pure, **sans dépendance libGDX** : `PType`, `Species`, `Pokedex` (espèces + kit portée/capacité par lignée), `Ability`, `Item` (composants, objets combinés, effets), `Unit` (+ objets tenus, exemplaires), `Synergies`, `Hex` (grille, distances, A*), `Fighter`, `Battle` (moteur), `GameState`, `Sim` |
 | `core/src/test/java/autobattler/` | Tests JUnit 5 : `HexTest` (grille, A*), `BattleTest` (kits, fin des combats, pas de superposition, déterminisme), `ItemTest` (recettes, équipement, stats), `GameStateTest` (XP, pool partagé, fusion avec objets, butin) |
-| `core/src/main/java/autobattler/gfx/` | Rendu et entrées libGDX : `AutoBattlerGame` (ApplicationAdapter), `GameView` (mise en page, dessin, souris), `Canvas` (dessin en coordonnées haut-gauche), `Assets`, `Rect` |
+| `core/src/main/java/autobattler/gfx/` | Rendu et entrées libGDX : `AutoBattlerGame` (ApplicationAdapter, tremblement de caméra), `GameView` (mise en page 1280×720, plateau en perspective, animations, particules, souris), `Canvas` (dessin en coordonnées haut-gauche), `Assets` (polices, textures UI, sprites PokéAPI de secours), `PmdSprites` (atlas animé PMD + portraits), `Sounds` (bruitages + musique), `Rect` |
 | `lwjgl3/` | Lanceur desktop (`Lwjgl3Launcher`) |
 | `teavm/` | Lanceur web (`WebLauncher`) + configuration du plugin `com.github.xpenatan.gdx-teavm` |
-| `assets/` | **Généré** par `tools/gen_assets.py` : `sprites.png` + `sprites.txt` (atlas), `ui/*.png`, `fonts/*.fnt|png` |
-| `tools/gen_assets.py` | Génère les assets (sprites PokéAPI rognés, textures UI, polices bitmap Fira Sans en 2x) |
+| `assets/` | **Généré** par `tools/gen_assets.py` : `pmd0.png`, `pmd1.png` + `pmd.txt` (sprites animés et portraits PMDCollab), `sprites.png` + `sprites.txt` (PokéAPI, secours), `ui/*.png`, `fonts/*.fnt|png` ; et par `tools/gen_audio.py` : `sfx/*.wav`, `music/theme.mp3` |
+| `tools/gen_assets.py` | Génère les assets (atlas PMD rogné + index, portraits, `CREDITS-PMD.md`, sprites PokéAPI, textures UI, polices bitmap Fira Sans en 2x) |
+| `tools/gen_audio.py` | Synthétise les bruitages et la musique (numpy + ffmpeg) |
+| `CREDITS-PMD.md` | Crédits des sprites PMDCollab (CC BY-NC 4.0, obligatoires) — généré |
 | `tools/smoke-test/` | Test de fumée Playwright du build web (captures d'écran) |
 | `docs/ROADMAP.md` | Feuille de route vers la version façon TFT |
 
@@ -39,7 +42,8 @@ Objectif long terme : une version façon TFT (grille hexagonale, déplacements, 
 ./gradlew :core:simulate                 # bot qui joue 300 parties (équilibrage)
 ./gradlew :core:test                     # tests du moteur
 ./gradlew build                          # compile tout
-python3 tools/gen_assets.py              # régénère assets/ (Pillow requis)
+python3 tools/gen_assets.py              # régénère assets/ graphiques (Pillow requis, ~2 min au 1er lancement)
+python3 tools/gen_audio.py               # régénère sfx/ et music/ (numpy + ffmpeg)
 ```
 
 ## Conventions et contraintes
@@ -47,7 +51,9 @@ python3 tools/gen_assets.py              # régénère assets/ (Pillow requis)
 - **Langue** : code (noms) en anglais, commentaires, messages de jeu et docs en français.
 - **TeaVM** : pas d'AWT/Swing, pas de réflexion, éviter `String.format` (utiliser des helpers comme `GameView.fmt2`). Le code compile en bytecode Java 17 (`options.release = 17`, requis par gdx-teavm).
 - **Logique séparée du rendu** : rien dans `autobattler.*` (hors `gfx`) ne doit importer libGDX, pour que `Sim` et de futurs tests tournent sans GPU. Les couleurs des types sont des `int` 0xRRGGBB (`PType.rgb`).
-- **Coordonnées** : la mise en page est en 1000×690 avec origine en haut à gauche ; `Canvas` convertit vers le repère libGDX (y vers le haut). `FitViewport` gère la mise à l'échelle. Hexagones de rayon 28 px à partir de (200, 58) : centre x = 200 + 24,25 + 48,5 × (col + 0,5 si ligne impaire), y = 86 + 42 × ligne (utile pour le test de fumée). Inventaire d'objets : 5×2 cases de 46×38 à partir de (728, 432). Boutons : Relancer (650,540), Acheter XP (824,540), Verrouiller (650,590), Vendre (650,636), Combat (824,590).
+- **Coordonnées** : la mise en page est en 1280×720 avec origine en haut à gauche ; `Canvas` convertit vers le repère libGDX (y vers le haut). `FitViewport` gère la mise à l'échelle. Plateau en perspective : facteur `persp(ligne) = 0,78 + 0,32 × ligne / 7`, centre x = 560 + (col + 0,5 si ligne impaire − 3,25) × 84 × persp, y cumulé à partir de 150 (voir `GameView.ROW_Y` ; le test de fumée recalcule la même formule). Banc : 8 cases 82×76 à partir de (211, 480), pas 88. Objets : 5×2 cases 32×34 à partir de (12, 480). Boutique : 5 cartes 134×142 à partir de (213, 568), pas 140. Boutons : Relancer (928,568), Acheter XP (1102,568), Verrouiller (928,618), Vendre (1102,618), Combat (928,664, 340×46), Son (1196,9).
+- **Sprites PMD** : dans `pmd.txt`, chaque image a un décalage (ox, oy) de son coin haut-gauche par rapport au point au sol (= centre de la frame PMD). Directions 0 bas, 1 bas-droite, 2 droite, 3 haut-droite, 4 haut (5 à 7 = miroir de 3 à 1). Les animations sont pilotées côté vue (`GameView.AnimState`) à partir des événements de `Battle` ; la logique ne connaît pas les animations.
+- **Licence** : les sprites PMDCollab sont en CC BY-NC 4.0 → projet non commercial et `CREDITS-PMD.md` à garder à jour (régénéré par `gen_assets.py`).
 - **Assets** : ne pas éditer `assets/` à la main, modifier `tools/gen_assets.py` puis le relancer. Les sprites et polices sont en 2x (polices affichées à l'échelle 0.5, sprites en filtrage Nearest).
 - **Pokédex** : ajouter une espèce = une ligne `add(...)` dans `Pokedex.java` puis `python3 tools/gen_assets.py` (le script lit les numéros dans `Pokedex.java`).
 - **Moteur de combat** (`Battle`) : pas fixe de 50 ms, déterministe à graine donnée. Chaque tick : statuts → déplacement en cours → (si non neutralisé) ciblage de l'ennemi le plus proche (provocation prioritaire, Spectre = le plus affaibli) → attaque si à portée, sinon un pas A* (`Hex.nextStep`). Mana : +10 par attaque, +5 par coup reçu ; à `maxMana`, la capacité remplace l'attaque. Dégâts = `DAMAGE_BASE (22) × puissance × Atq / Déf × efficacité × prolongation`.

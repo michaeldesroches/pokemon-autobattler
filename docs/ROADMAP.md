@@ -11,8 +11,8 @@ Les estimations supposent un dev seul en soirées, environ 10 h par semaine.
 | 0. Décision technique | ✅ Fait : libGDX 1.14 + TeaVM (gdx-teavm), desktop LWJGL3 |
 | 1. Moteur de combat façon TFT | ✅ Fait : hexagones, A*, portée, 23 capacités, statuts |
 | 2. Méta-jeu TFT | ✅ Fait : niveau/XP, pool partagé, 6 composants → 21 objets, manches sauvages (classes et carrousel reportés) |
-| 3. Visuel 3/4 | À faire (prochaine étape possible) |
-| 4. Lobby à 8 joueurs | À faire |
+| 3. Visuel 3/4 | ✅ Fait : plateau en perspective, sprites animés PMD, particules, sons, interface 16:9 |
+| 4. Lobby à 8 joueurs | À faire (prochaine étape : 7 bots) |
 | 5. Contenu et équilibrage | En continu |
 
 ## Étape 0 : décision technique (1 soirée) — fait
@@ -49,7 +49,11 @@ Plan initial :
 - Des manches contre des Pokémon sauvages qui donnent des objets, et éventuellement un carrousel.
 - Des synergies refaites autour des types, plus des « classes » (Starter, Légendaire, Fossile) pour multiplier les combinaisons.
 
-## Étape 3 : visuel 3/4 (2 à 3 semaines)
+## Étape 3 : visuel 3/4 (2 à 3 semaines) — fait
+
+Ce qui a été livré : interface 16:9 (1280×720) façon TFT (boutique en cartes avec portraits, panneau niveau/or près de la boutique), plateau hexagonal en perspective, sprites animés PMDCollab (attente, marche, attaque, dégâts, sommeil) orientés vers leur cible, portraits, particules par type, tremblement d'écran sur les capacités, bruitages et musique synthétisés par script, bouton son. Reportés : portraits des autres joueurs et historique (avec le lobby de l'étape 4).
+
+Plan initial :
 
 - Les sprites animés de Donjon Mystère (PMDCollab SpriteCollab) en 8 directions : marche, attaque, dégâts, K.O. Leur licence interdit l'usage commercial et demande de créditer les artistes.
 - Un plateau en perspective, l'affichage trié par profondeur, et le glisser-déposer sur une grille hexagonale.

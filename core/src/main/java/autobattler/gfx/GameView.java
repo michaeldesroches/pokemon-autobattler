@@ -21,40 +21,55 @@ import com.badlogic.gdx.utils.viewport.Viewport;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 
-/** Écran de jeu : mise en page, rendu et interactions souris/tactile. */
+/**
+ * Écran de jeu en 1280×720 : plateau hexagonal en perspective, Pokémon animés (sprites PMDCollab),
+ * effets, interface façon TFT et interactions souris/tactile.
+ */
 public final class GameView extends InputAdapter {
-    public static final int W = 1000, H = 690;
+    public static final int W = 1280, H = 720;
 
-    // Champ de bataille hexagonal : 7 colonnes × 8 lignes, hexagones de rayon HEX
-    private static final float HEX = 28f;
-    private static final float HEX_W = HEX * 1.7320508f;
-    private static final float AX = 200, AY = 58;
-    private static final Rect ARENA = new Rect(AX - 4, AY - 4, HEX_W * 7.5f + 8, HEX * 1.5f * 7 + HEX * 2 + 8);
+    // ---- Plateau en perspective : 7 colonnes × 8 lignes (0 = fond adverse, 7 = avant du camp joueur)
+    private static final float HW = 84f;          // largeur d'un hexagone à l'échelle 1
+    private static final float SQUASH = 0.56f;     // aplatissement vertical
+    private static final float BOARD_CX = 560f, BOARD_Y0 = 150f;
+    private static final float[] ROW_Y = new float[Hex.ROWS];
 
-    private static final Rect LEFT = new Rect(16, 58, 170, 350);
-    private static final Rect RIGHT = new Rect(574, 58, 410, 350);
-    private static final int BENCH_Y = 432, BENCH_X = 16, BENCH_STEP = 88, BENCH_SIZE = 82;
-    private static final int SHOP_Y = 540, SHOP_X = 16, SHOP_STEP = 124, SHOP_W = 118, SHOP_H = 136;
+    static {
+        ROW_Y[0] = BOARD_Y0;
+        for (int r = 1; r < Hex.ROWS; r++) {
+            float avg = (persp(r - 1) + persp(r)) / 2;
+            ROW_Y[r] = ROW_Y[r - 1] + HW * 1.1547f * 0.75f * SQUASH * avg;
+        }
+    }
+
+    private static final Rect ARENA = new Rect(204, 50, 712, 412);
+    private static final Rect LEFT = new Rect(12, 54, 180, 404);
+    private static final Rect RIGHT = new Rect(928, 54, 340, 404);
+    private static final int BENCH_X = 211, BENCH_Y = 480, BENCH_STEP = 88, BENCH_W = 82, BENCH_H = 76;
+    private static final int INV_X = 12, INV_Y = 480, INV_W = 32, INV_H = 34, INV_GAP = 4;
+    private static final Rect LEVEL_PANEL = new Rect(12, 568, 180, 142);
+    private static final int SHOP_X = 213, SHOP_Y = 568, SHOP_STEP = 140, SHOP_W = 134, SHOP_H = 142;
     private static final Rect SHOP_AREA = new Rect(SHOP_X, SHOP_Y, 5 * SHOP_STEP, SHOP_H);
-    private static final Rect BTN_A = new Rect(650, 540, 160, 40);
-    private static final Rect BTN_B = new Rect(824, 540, 160, 40);
-    private static final Rect BTN_LOCK = new Rect(650, 590, 160, 40);
-    private static final Rect BTN_SELL = new Rect(650, 636, 160, 40);
-    private static final Rect BTN_MAIN = new Rect(824, 590, 160, 86);
-    private static final int INV_X = 728, INV_Y = 432, INV_W = 46, INV_H = 38, INV_GAP = 5;
-    private static final Rect INV_AREA = new Rect(INV_X, INV_Y, 5 * INV_W + 4 * INV_GAP, 2 * INV_H + INV_GAP);
+    private static final Rect BTN_A = new Rect(928, 568, 166, 44);
+    private static final Rect BTN_B = new Rect(1102, 568, 166, 44);
+    private static final Rect BTN_LOCK = new Rect(928, 618, 166, 40);
+    private static final Rect BTN_SELL = new Rect(1102, 618, 166, 40);
+    private static final Rect BTN_MAIN = new Rect(928, 664, 340, 46);
+    private static final Rect BTN_SOUND = new Rect(1196, 9, 72, 26);
 
-    public static final Color BG = Canvas.rgb(0x1B1F2A);
-    private static final Color PANEL = Canvas.rgb(0x262C3A);
+    public static final Color BG = Canvas.rgb(0x161A24);
+    private static final Color PANEL = Canvas.rgb(0x242A38);
     private static final Color PANEL_LIGHT = Canvas.rgb(0x323A4C);
     private static final Color DISABLED = Canvas.rgb(0x2A2F3B);
-    private static final Color TRACK = Canvas.rgb(0x151922);
+    private static final Color TRACK = Canvas.rgb(0x10131A);
     private static final Color TEXT = Canvas.rgb(0xE8ECF4);
     private static final Color SOFT = Canvas.rgb(0xC5CEDF);
     private static final Color MUTED = Canvas.rgb(0x8C97AD);
@@ -62,11 +77,14 @@ public final class GameView extends InputAdapter {
     private static final Color ACCENT = Canvas.rgb(0xE84A5F);
     private static final Color GOOD = Canvas.rgb(0x4CC38A);
     private static final Color BLUE = Canvas.rgb(0x5DA9FF);
+    private static final Color PURPLE = Canvas.rgb(0x7E6BE0);
     private static final Color ORANGE = Canvas.rgb(0xFF9F43);
     private static final Color DODGE = Canvas.rgb(0x9AD0FF);
     private static final Color HEAL = Canvas.rgb(0x7CF0A0);
-    private static final Color ENEMY_TILE = Canvas.rgb(0x40293A);
-    private static final Color PLAYER_TILE = Canvas.rgb(0x23423A);
+    private static final Color ENEMY_TILE = Canvas.rgb(0x4A2F42);
+    private static final Color ENEMY_TILE2 = Canvas.rgb(0x41293A);
+    private static final Color PLAYER_TILE = Canvas.rgb(0x27503F);
+    private static final Color PLAYER_TILE2 = Canvas.rgb(0x224637);
     private static final Color WHITE = Canvas.rgb(0xFFFFFF);
     private static final Color BLACK = Canvas.rgb(0x000000);
     private static final Color TIER1 = Canvas.rgb(0x7D8799);
@@ -74,21 +92,37 @@ public final class GameView extends InputAdapter {
     private static final Color TIER3 = Canvas.rgb(0x9B59D0);
 
     private final Assets assets;
+    private final PmdSprites pmd;
+    private final Sounds sounds;
     private final Viewport viewport;
     private final GameState state = new GameState(System.currentTimeMillis());
     private final Vector2 tmpVec = new Vector2();
+    private final Random fxRng = new Random(1);
 
     private int speed = 1;
     private double endDelay;
+    private float clock;
+    private float shake;
+    private int lastLevel = state.level;
+    private GameState.Phase lastPhase = state.phase;
 
     private int selected = -1;
     private int pressSlot = -1;
-    /** Objet de l'inventaire en cours de glisser (index), ou -1. */
     private int pressItem = -1;
     private boolean pressed;
     private float pressX, pressY;
     private boolean dragging;
     private float mx = -1, my = -1;
+
+    // ---- animations des combattants (côté affichage uniquement)
+    private static final class AnimState {
+        String name = "Idle";
+        float t;
+        int dir;
+        boolean once;
+    }
+
+    private final Map<Fighter, AnimState> animStates = new HashMap<Fighter, AnimState>();
 
     private static final class Floater {
         float x, y, life;
@@ -130,20 +164,47 @@ public final class GameView extends InputAdapter {
         }
     }
 
+    private static final class Particle {
+        float x, y, vx, vy, life, maxLife, size;
+        final Color color;
+
+        Particle(float x, float y, float vx, float vy, float life, float size, Color color) {
+            this.x = x;
+            this.y = y;
+            this.vx = vx;
+            this.vy = vy;
+            this.life = this.maxLife = life;
+            this.size = size;
+            this.color = new Color(color);
+        }
+    }
+
     private final List<Floater> floaters = new ArrayList<Floater>();
     private final List<Projectile> projectiles = new ArrayList<Projectile>();
     private final List<Area> areas = new ArrayList<Area>();
-    /** Pour les capacités de zone : un seul libellé par lanceur et par lot d'événements. */
+    private final List<Particle> particles = new ArrayList<Particle>();
     private final Set<Fighter> shownAbility = new HashSet<Fighter>();
 
-    public GameView(Assets assets, Viewport viewport) {
+    public GameView(Assets assets, PmdSprites pmd, Sounds sounds, Viewport viewport) {
         this.assets = assets;
+        this.pmd = pmd;
+        this.sounds = sounds;
         this.viewport = viewport;
+    }
+
+    public float shakeX() {
+        return shake > 0 ? (fxRng.nextFloat() - 0.5f) * 2 * shake : 0;
+    }
+
+    public float shakeY() {
+        return shake > 0 ? (fxRng.nextFloat() - 0.5f) * 2 * shake : 0;
     }
 
     // ================================================================== logique d'animation
 
     public void update(float dt) {
+        clock += dt;
+        shake = Math.max(0, shake - dt * 18);
         if (state.phase == GameState.Phase.COMBAT && state.battle != null) {
             Battle b = state.battle;
             if (b.result == 0) {
@@ -156,7 +217,19 @@ public final class GameView extends InputAdapter {
             for (Fighter f : b.fighters) {
                 f.lunge = Math.max(0, f.lunge - dt * 5 * speed);
                 f.flash = Math.max(0, f.flash - dt * 4 * speed);
+                updateAnim(f, dt * speed);
             }
+        }
+        if (state.phase != lastPhase) {
+            if (state.phase == GameState.Phase.RESULT || state.phase == GameState.Phase.GAMEOVER) {
+                sounds.play(state.lastWin ? "win" : "lose", 0.7f);
+            }
+            if (state.phase == GameState.Phase.PREP) animStates.clear();
+            lastPhase = state.phase;
+        }
+        if (state.level != lastLevel) {
+            if (state.level > lastLevel) sounds.play("levelup", 0.7f);
+            lastLevel = state.level;
         }
         for (Iterator<Floater> it = floaters.iterator(); it.hasNext(); ) {
             Floater f = it.next();
@@ -174,6 +247,74 @@ public final class GameView extends InputAdapter {
             a.life -= dt * speed;
             if (a.life <= 0) it.remove();
         }
+        for (Iterator<Particle> it = particles.iterator(); it.hasNext(); ) {
+            Particle p = it.next();
+            p.life -= dt;
+            p.x += p.vx * dt;
+            p.y += p.vy * dt;
+            p.vy += 160 * dt;
+            if (p.life <= 0) it.remove();
+        }
+    }
+
+    private AnimState anim(Fighter f) {
+        AnimState a = animStates.get(f);
+        if (a == null) {
+            a = new AnimState();
+            a.dir = f.player ? 4 : 0;
+            a.t = fxRng.nextFloat();
+            animStates.put(f, a);
+        }
+        return a;
+    }
+
+    private void play(Fighter f, String name) {
+        AnimState a = anim(f);
+        a.name = name;
+        a.t = 0;
+        a.once = true;
+    }
+
+    private void updateAnim(Fighter f, float dt) {
+        AnimState a = anim(f);
+        a.t += dt;
+        // orientation : vers la cible, ou dans le sens du déplacement
+        float dx = 0, dy = 0;
+        if (f.moving()) {
+            dx = cellX(f.cell) - cellX(f.fromCell);
+            dy = cellY(f.cell) - cellY(f.fromCell);
+        } else if (f.target != null && f.target.alive) {
+            dx = fx(f.target) - fx(f);
+            dy = fy(f.target) - fy(f);
+        }
+        if (dx != 0 || dy != 0) a.dir = dirFromVector(dx, dy);
+        if (!f.alive) {
+            if (!"Hurt".equals(a.name)) play(f, "Hurt");
+            return;
+        }
+        if (a.once) {
+            PmdSprites.Anim pa = pmd.anim(f.species().dex, a.name);
+            if (pa == null || a.t >= pa.duration()) {
+                a.once = false;
+                a.name = "Idle";
+            } else {
+                return;
+            }
+        }
+        String loop = f.moving() ? "Walk" : f.sleep > 0 ? "Sleep" : "Idle";
+        if (!loop.equals(a.name)) {
+            a.name = loop;
+            a.t = 0;
+        }
+    }
+
+    /** Direction PMD (0 bas … 4 haut … 7 bas-gauche) depuis un vecteur écran (y vers le bas). */
+    private static int dirFromVector(float dx, float dy) {
+        double ang = Math.toDegrees(Math.atan2(dy / SQUASH, dx));
+        int k = (int) Math.round(ang / 45.0);
+        k = ((k % 8) + 8) % 8; // 0 droite, 1 bas-droite, 2 bas, 3 bas-gauche, 4 gauche, 5 haut-gauche, 6 haut, 7 haut-droite
+        int[] toPmd = {2, 1, 0, 7, 6, 5, 4, 3};
+        return toPmd[k];
     }
 
     private void onEvent(Battle.Event ev) {
@@ -181,34 +322,67 @@ public final class GameView extends InputAdapter {
             case ATTACK: {
                 ev.src.lunge = 1;
                 ev.tgt.flash = 1;
-                Color c = ev.mult > 1.01 ? ORANGE : ev.mult < 0.99 ? MUTED : WHITE;
+                if (!ev.special) play(ev.src, "Attack");
+                AnimState ta = anim(ev.tgt);
+                if (!ta.once || !"Attack".equals(ta.name)) play(ev.tgt, "Hurt");
                 boolean crit = "crit".equals(ev.text);
-                if (crit) c = Canvas.rgb(0xFF5A36);
+                Color c = crit ? Canvas.rgb(0xFF5A36) : ev.mult > 1.01 ? ORANGE : ev.mult < 0.99 ? MUTED : WHITE;
                 String txt = Math.round(ev.amount) + (ev.mult > 1.01 || crit ? "!" : "");
-                floaters.add(new Floater(fx(ev.tgt) + (float) ((Math.random() - 0.5) * 16), fy(ev.tgt) - 34, txt, c, ev.special || crit));
+                float s = persp(Hex.row(ev.tgt.cell));
+                floaters.add(new Floater(fx(ev.tgt) + (fxRng.nextFloat() - 0.5f) * 16, fy(ev.tgt) - 86 * s, txt, c, ev.special || crit));
                 if (ev.src.range > 1 && !ev.special) projectiles.add(new Projectile(ev.src, ev.tgt, Canvas.rgb(ev.type.rgb)));
+                burst(fx(ev.tgt), fy(ev.tgt) - 30 * s, Canvas.rgb(ev.type.rgb), crit ? 9 : 5, crit ? 120 : 80);
+                if (crit) {
+                    shake = Math.max(shake, 3);
+                    sounds.play("crit", 0.6f, 60);
+                } else {
+                    sounds.play("hit", 0.35f, 70);
+                }
                 break;
             }
             case ABILITY:
                 if (shownAbility.add(ev.src)) {
-                    floaters.add(new Floater(fx(ev.src), fy(ev.src) - 46, ev.text + " !", GOLD, true));
+                    floaters.add(new Floater(fx(ev.src), fy(ev.src) - 100 * persp(Hex.row(ev.src.cell)), ev.text + " !", GOLD, true));
+                    sounds.play("ability", 0.6f, 80);
+                    shake = Math.max(shake, 4);
                 }
+                play(ev.src, "Attack");
                 if (ev.src.range > 1 && ev.tgt != null) projectiles.add(new Projectile(ev.src, ev.tgt, Canvas.rgb(ev.type.rgb)));
                 break;
-            case AREA:
-                areas.add(new Area(ev.cell, ev.radius, Canvas.rgb(ev.type.rgb)));
+            case AREA: {
+                Color c = Canvas.rgb(ev.type.rgb);
+                areas.add(new Area(ev.cell, ev.radius, c));
+                for (int cell = 0; cell < Hex.CELLS; cell++) {
+                    if (Hex.distance(cell, ev.cell) <= ev.radius) burst(cellX(cell), cellY(cell) - 10, c, 4, 90);
+                }
+                shake = Math.max(shake, 5);
                 break;
+            }
             case HEAL:
-                floaters.add(new Floater(fx(ev.tgt), fy(ev.tgt) - 34, "+" + Math.round(ev.amount), HEAL, false));
+                floaters.add(new Floater(fx(ev.tgt), fy(ev.tgt) - 86 * persp(Hex.row(ev.tgt.cell)), "+" + Math.round(ev.amount), HEAL, false));
+                burst(fx(ev.tgt), fy(ev.tgt) - 20, HEAL, 6, 50);
                 break;
             case DODGE:
-                floaters.add(new Floater(fx(ev.tgt), fy(ev.tgt) - 30, "Esquive", DODGE, false));
+                floaters.add(new Floater(fx(ev.tgt), fy(ev.tgt) - 50, "Esquive", DODGE, false));
                 break;
             case STATUS:
-                floaters.add(new Floater(fx(ev.tgt), fy(ev.tgt) - 22, ev.text, statusColor(ev.text), false));
+                floaters.add(new Floater(fx(ev.tgt), fy(ev.tgt) - 42, ev.text, statusColor(ev.text), false));
+                break;
+            case FAINT:
+                burst(fx(ev.tgt), fy(ev.tgt) - 20, WHITE, 12, 110);
+                sounds.play("faint", 0.5f, 80);
                 break;
             default:
                 break;
+        }
+    }
+
+    private void burst(float x, float y, Color c, int n, float speedMax) {
+        for (int i = 0; i < n && particles.size() < 400; i++) {
+            double a = fxRng.nextDouble() * Math.PI * 2;
+            float v = speedMax * (0.4f + 0.6f * fxRng.nextFloat());
+            particles.add(new Particle(x, y, (float) Math.cos(a) * v, (float) Math.sin(a) * v - 60,
+                    0.35f + 0.3f * fxRng.nextFloat(), 2 + fxRng.nextFloat() * 2.5f, c));
         }
     }
 
@@ -222,15 +396,28 @@ public final class GameView extends InputAdapter {
         return GOLD;
     }
 
-    // ================================================================== géométrie
+    // ================================================================== géométrie (perspective)
+
+    /** Facteur d'échelle de la ligne (plus petit au fond). */
+    private static float persp(int row) {
+        return 0.78f + 0.32f * row / (Hex.ROWS - 1);
+    }
 
     private static float cellX(int cell) {
         int r = Hex.row(cell);
-        return AX + HEX_W / 2 + HEX_W * (Hex.col(cell) + ((r & 1) == 1 ? 0.5f : 0f));
+        return BOARD_CX + (Hex.col(cell) + ((r & 1) == 1 ? 0.5f : 0f) - 3.25f) * HW * persp(r);
     }
 
     private static float cellY(int cell) {
-        return AY + HEX + HEX * 1.5f * Hex.row(cell);
+        return ROW_Y[Hex.row(cell)];
+    }
+
+    private static float tileW(int row) {
+        return HW * persp(row);
+    }
+
+    private static float tileH(int row) {
+        return HW * 1.1547f * SQUASH * persp(row);
     }
 
     private static int slotCell(int slot) {
@@ -239,15 +426,17 @@ public final class GameView extends InputAdapter {
     }
 
     private static Rect benchRect(int i) {
-        return new Rect(BENCH_X + i * BENCH_STEP, BENCH_Y, BENCH_SIZE, BENCH_SIZE);
+        return new Rect(BENCH_X + i * BENCH_STEP, BENCH_Y, BENCH_W, BENCH_H);
     }
 
-    /** Case hexagonale du champ de bataille sous un point, ou -1. */
+    /** Case du plateau sous un point (ellipse de chaque tuile), ou -1. */
     private static int cellAt(float x, float y) {
         int best = -1;
-        float bestD = HEX * 0.95f;
+        float bestD = 1f;
         for (int c = 0; c < Hex.CELLS; c++) {
-            float d = Vector2.dst(x, y, cellX(c), cellY(c));
+            int r = Hex.row(c);
+            float nx = (x - cellX(c)) / (tileW(r) * 0.5f), ny = (y - cellY(c)) / (tileH(r) * 0.5f);
+            float d = nx * nx + ny * ny;
             if (d < bestD) {
                 bestD = d;
                 best = c;
@@ -283,7 +472,6 @@ public final class GameView extends InputAdapter {
         return -1;
     }
 
-    /** Position affichée d'un combattant (interpolée pendant un déplacement). */
     private static float fx(Fighter f) {
         float p = f.moveT > 0 ? (float) (1 - f.moveT / f.moveDur) : 1f;
         return cellX(f.fromCell) + (cellX(f.cell) - cellX(f.fromCell)) * p;
@@ -294,9 +482,14 @@ public final class GameView extends InputAdapter {
         return cellY(f.fromCell) + (cellY(f.cell) - cellY(f.fromCell)) * p;
     }
 
+    private static float fScale(Fighter f) {
+        float p = f.moveT > 0 ? (float) (1 - f.moveT / f.moveDur) : 1f;
+        float a = Hex.row(f.fromCell) + (Hex.row(f.cell) - Hex.row(f.fromCell)) * p;
+        return 0.78f + 0.32f * a / (Hex.ROWS - 1);
+    }
+
     // ================================================================== entrées
 
-    /** Convertit des coordonnées écran (pixels) en coordonnées du jeu (origine en haut à gauche). */
     private boolean toGame(int screenX, int screenY) {
         viewport.unproject(tmpVec.set(screenX, screenY));
         mx = tmpVec.x;
@@ -312,6 +505,7 @@ public final class GameView extends InputAdapter {
     @Override
     public boolean touchDown(int screenX, int screenY, int pointer, int button) {
         toGame(screenX, screenY);
+        sounds.userGesture();
         pressed = true;
         pressX = mx;
         pressY = my;
@@ -327,7 +521,7 @@ public final class GameView extends InputAdapter {
         int s = slotAt(mx, my);
         if (s >= 0 && state.get(s) != null) {
             if (button == Input.Buttons.RIGHT) {
-                state.sell(s);
+                if (state.sell(s)) sounds.play("buy", 0.5f);
                 if (selected == s) selected = -1;
                 pressed = false;
                 return true;
@@ -350,12 +544,15 @@ public final class GameView extends InputAdapter {
         if (!pressed) return true;
         if (dragging && pressItem >= 0) {
             int target = slotAt(mx, my);
-            if (target >= 0 && state.get(target) != null) state.equip(pressItem, target);
+            if (target >= 0 && state.get(target) != null && state.equip(pressItem, target)) sounds.play("merge", 0.5f);
             selected = -1;
         } else if (dragging && pressSlot >= 0) {
             int target = slotAt(mx, my);
-            if (target >= 0) state.move(pressSlot, target);
-            else if (SHOP_AREA.contains(mx, my)) state.sell(pressSlot);
+            if (target >= 0) {
+                if (state.move(pressSlot, target)) sounds.play("click", 0.6f);
+            } else if (SHOP_AREA.contains(mx, my) && state.sell(pressSlot)) {
+                sounds.play("buy", 0.5f);
+            }
             selected = -1;
         } else if (button != Input.Buttons.RIGHT) {
             onClick(mx, my);
@@ -368,16 +565,21 @@ public final class GameView extends InputAdapter {
     }
 
     private void onClick(float x, float y) {
+        if (BTN_SOUND.contains(x, y)) {
+            sounds.toggle();
+            return;
+        }
         switch (state.phase) {
             case PREP:
                 if (BTN_A.contains(x, y)) {
-                    state.reroll();
+                    if (state.reroll()) sounds.play("click", 0.7f);
                 } else if (BTN_B.contains(x, y)) {
-                    state.buyXp();
+                    if (state.buyXp()) sounds.play("click", 0.7f);
                 } else if (BTN_LOCK.contains(x, y)) {
                     state.toggleLock();
+                    sounds.play("click", 0.7f);
                 } else if (BTN_SELL.contains(x, y)) {
-                    if (selected >= 0) state.sell(selected);
+                    if (selected >= 0 && state.sell(selected)) sounds.play("buy", 0.5f);
                     selected = -1;
                 } else if (BTN_MAIN.contains(x, y)) {
                     selected = -1;
@@ -386,11 +588,16 @@ public final class GameView extends InputAdapter {
                         floaters.clear();
                         projectiles.clear();
                         areas.clear();
+                        animStates.clear();
+                        sounds.play("click", 0.7f);
                     }
                 } else {
                     int shop = shopAt(x, y);
                     if (shop >= 0) {
-                        state.buy(shop);
+                        if (state.buy(shop)) {
+                            boolean merged = state.message.contains("évolue") || state.message.contains("★ !");
+                            sounds.play(merged ? "merge" : "buy", 0.6f);
+                        }
                         selected = -1;
                         return;
                     }
@@ -421,6 +628,7 @@ public final class GameView extends InputAdapter {
                 if (BTN_MAIN.contains(x, y) || ARENA.contains(x, y)) {
                     state.newGame();
                     selected = -1;
+                    lastLevel = state.level;
                 }
                 break;
             default:
@@ -437,8 +645,10 @@ public final class GameView extends InputAdapter {
         drawInfo(g);
         drawBench(g);
         drawInventory(g);
+        drawLevelPanel(g);
         drawShop(g);
         drawButtons(g);
+        drawParticles(g);
         drawFloaters(g);
         drawOverlay(g);
         drawDragged(g);
@@ -455,65 +665,60 @@ public final class GameView extends InputAdapter {
     private void drawTopBar(Canvas g) {
         g.rect(0, 0, W, 44, PANEL);
         g.text(bold(18), "Manche " + state.round, 16, 29, TEXT);
+        if (state.isPveRound()) g.text(bold(12), "SAUVAGES", 120, 28, GOLD);
 
-        g.text(bold(13), "PV", 120, 28, MUTED);
-        g.round(142, 15, 120, 16, TRACK);
+        g.text(bold(13), "PV", 212, 28, MUTED);
+        g.round(236, 15, 200, 16, TRACK);
         float frac = state.hp / (float) GameState.START_HP;
-        g.round(142, 15, 120 * frac, 16, frac > 0.5f ? GOOD : frac > 0.25f ? GOLD : ACCENT);
-        g.centered(bold(12), state.hp + " / " + GameState.START_HP, 142 + 60, 28, WHITE);
-
-        g.text(bold(15), "● " + state.gold + " or", 278, 29, GOLD);
-
-        g.text(bold(13), "Niv. " + state.level, 370, 28, TEXT);
-        g.round(420, 15, 100, 16, TRACK);
-        int need = state.xpToNext();
-        if (need > 0) {
-            g.round(420, 15, 100f * state.xp / need, 16, Canvas.rgb(0x7E6BE0));
-            g.centered(bold(12), "XP " + state.xp + " / " + need, 470, 28, WHITE);
-        } else {
-            g.round(420, 15, 100, 16, Canvas.rgb(0x7E6BE0));
-            g.centered(bold(12), "MAX", 470, 28, WHITE);
-        }
+        g.round(236, 15, 200 * frac, 16, frac > 0.5f ? GOOD : frac > 0.25f ? GOLD : ACCENT);
+        g.centered(bold(12), state.hp + " / " + GameState.START_HP, 336, 28, WHITE);
 
         int bc = state.boardCount();
-        g.text(regular(13), "Équipe " + bc + " / " + state.maxUnits(), 538, 29, bc > state.maxUnits() ? ACCENT : TEXT);
-        g.text(regular(13), "Victoires " + state.wins, 640, 29, TEXT);
+        g.text(regular(13), "Équipe " + bc + " / " + state.maxUnits(), 460, 29, bc > state.maxUnits() ? ACCENT : TEXT);
+        g.text(regular(13), "Victoires " + state.wins, 570, 29, TEXT);
         Battle b = state.battle;
         if (state.phase == GameState.Phase.COMBAT && b != null && b.overtimeMult() > 1) {
-            g.right(bold(13), "PROLONGATION · dégâts x" + fmt1(b.overtimeMult()), W - 16, 29, ACCENT);
+            g.text(bold(13), "PROLONGATION · dégâts x" + fmt1(b.overtimeMult()), 680, 29, ACCENT);
         } else if (state.isPveRound() && state.phase == GameState.Phase.PREP) {
-            g.right(bold(13), "POKÉMON SAUVAGES · butin d'objets", W - 16, 29, GOLD);
+            g.text(bold(13), "Pokémon sauvages : butin d'objets à gagner", 680, 29, GOLD);
         } else if (Math.abs(state.streak) >= 2) {
-            g.right(regular(13), (state.streak > 0 ? "Série de victoires x" : "Série de défaites x") + Math.abs(state.streak),
-                    W - 16, 29, state.streak > 0 ? GOOD : ACCENT);
+            g.text(regular(13), (state.streak > 0 ? "Série de victoires x" : "Série de défaites x") + Math.abs(state.streak),
+                    680, 29, state.streak > 0 ? GOOD : ACCENT);
         }
+        g.right(bold(13), "POKÉMON AUTO BATTLER", BTN_SOUND.x - 16, 28, MUTED);
+        boolean hover = BTN_SOUND.contains(mx, my);
+        g.round(BTN_SOUND.x, BTN_SOUND.y, BTN_SOUND.w, BTN_SOUND.h, hover ? PANEL_LIGHT.cpy().lerp(WHITE, 0.1f) : PANEL_LIGHT);
+        g.centered(bold(12), sounds.enabled() ? "Son : oui" : "Son : non", BTN_SOUND.cx(), BTN_SOUND.y + 18, sounds.enabled() ? TEXT : MUTED);
     }
 
     private void drawArena(Canvas g) {
-        g.round(ARENA.x, ARENA.y, ARENA.w, ARENA.h, Canvas.rgb(0x20252F));
+        g.round(ARENA.x, ARENA.y, ARENA.w, ARENA.h, Canvas.rgb(0x1C2230));
         boolean prep = state.phase == GameState.Phase.PREP;
-        int hoverCell = prep ? cellAt(mx, my) : -1;
-        for (int c = 0; c < Hex.CELLS; c++) {
-            boolean playerSide = Hex.row(c) >= Hex.SIDE_ROWS;
-            g.hex(cellX(c), cellY(c), HEX * 0.94f, playerSide ? PLAYER_TILE : ENEMY_TILE);
-            if (playerSide && prep && (c == hoverCell && (dragging || selected >= 0))) {
-                g.hex(cellX(c), cellY(c), HEX * 0.94f, g.fade(GOLD, 0.25f));
-                g.hexOutline(cellX(c), cellY(c), HEX * 0.94f, GOLD);
+        int hoverCell = prep && (dragging || selected >= 0) ? cellAt(mx, my) : -1;
+        for (int r = 0; r < Hex.ROWS; r++) {
+            for (int c = 0; c < Hex.COLS; c++) {
+                int cell = Hex.index(c, r);
+                boolean playerSide = r >= Hex.SIDE_ROWS;
+                Color base = playerSide ? ((c + r) % 2 == 0 ? PLAYER_TILE : PLAYER_TILE2) : ((c + r) % 2 == 0 ? ENEMY_TILE : ENEMY_TILE2);
+                drawTile(g, cell, base, false);
+                if (playerSide && cell == hoverCell) {
+                    drawTile(g, cell, g.fade(GOLD, 0.3f), false);
+                    drawTile(g, cell, GOLD, true);
+                }
             }
         }
-        g.text(bold(10), state.isPveRound() ? "POKÉMON SAUVAGES" : "ADVERSAIRE", ARENA.x + 6, ARENA.y + 12,
-                state.isPveRound() ? g.fade(GOLD, 0.7f) : g.fade(WHITE, 0.35f));
-        g.text(bold(10), "TON ÉQUIPE", ARENA.x + 6, ARENA.y + ARENA.h - 5, g.fade(WHITE, 0.35f));
+        g.text(bold(11), state.isPveRound() ? "POKÉMON SAUVAGES" : "ADVERSAIRE", ARENA.x + 10, ARENA.y + 16,
+                state.isPveRound() ? g.fade(GOLD, 0.8f) : g.fade(WHITE, 0.35f));
+        g.text(bold(11), "TON ÉQUIPE", ARENA.x + 10, ARENA.y + ARENA.h - 8, g.fade(WHITE, 0.35f));
 
         for (Area a : areas) {
-            float alpha = Math.min(1f, a.life / 0.5f) * 0.45f;
+            float alpha = Math.min(1f, a.life / 0.5f) * 0.5f;
             for (int c = 0; c < Hex.CELLS; c++) {
-                if (Hex.distance(c, a.cell) <= a.radius) g.hex(cellX(c), cellY(c), HEX * 0.94f, g.fade(a.color, alpha));
+                if (Hex.distance(c, a.cell) <= a.radius) drawTile(g, c, g.fade(a.color, alpha), false);
             }
         }
 
         if (!prep && state.battle != null) {
-            // tri par ligne d'affichage : ce qui est plus bas passe devant
             List<Fighter> order = new ArrayList<Fighter>(state.battle.fighters);
             Collections.sort(order, new Comparator<Fighter>() {
                 @Override
@@ -525,35 +730,133 @@ public final class GameView extends InputAdapter {
             for (Fighter f : order) drawFighter(g, f);
             for (Projectile p : projectiles) {
                 float x = fx(p.src) + (fx(p.tgt) - fx(p.src)) * p.t;
-                float y = fy(p.src) - 10 + (fy(p.tgt) - fy(p.src)) * p.t;
-                g.ellipse(x, y, 6, 6, g.fade(p.color, 0.5f));
-                g.ellipse(x, y, 3.5f, 3.5f, WHITE);
+                float y = fy(p.src) - 32 + (fy(p.tgt) - fy(p.src)) * p.t;
+                g.ellipse(x, y, 8, 8, g.fade(p.color, 0.45f));
+                g.ellipse(x, y, 4, 4, WHITE);
             }
             return;
         }
 
-        for (GameState.Placed p : state.enemy) {
-            int cell = Hex.fromLocal(false, p.row, p.col);
-            drawUnitOnHex(g, p.unit, cellX(cell), cellY(cell), false, false);
-        }
+        // préparation : adversaire puis plateau du joueur, du fond vers l'avant
+        List<Object[]> draws = new ArrayList<Object[]>();
+        for (GameState.Placed p : state.enemy) draws.add(new Object[]{p.unit, Hex.fromLocal(false, p.row, p.col), Boolean.FALSE, -1});
         for (int row = 0; row < GameState.ROWS; row++)
             for (int col = 0; col < GameState.COLS; col++) {
                 int s = GameState.boardSlot(row, col);
                 Unit u = state.board[row][col];
                 if (u == null || (dragging && pressSlot == s)) continue;
-                int cell = slotCell(s);
-                drawUnitOnHex(g, u, cellX(cell), cellY(cell), true, selected == s);
+                draws.add(new Object[]{u, slotCell(s), Boolean.TRUE, s});
             }
+        Collections.sort(draws, new Comparator<Object[]>() {
+            @Override
+            public int compare(Object[] a, Object[] b) {
+                return Integer.compare(Hex.row((Integer) a[1]), Hex.row((Integer) b[1]));
+            }
+        });
+        for (Object[] d : draws) {
+            Unit u = (Unit) d[0];
+            int cell = (Integer) d[1];
+            boolean mine = (Boolean) d[2];
+            int slot = (Integer) d[3];
+            if (mine && selected == slot) drawTile(g, cell, GOLD, true);
+            float s = persp(Hex.row(cell));
+            drawPokemon(g, u.species, cellX(cell), cellY(cell), s, mine ? 4 : 0, "Idle", clock + cell * 0.37f, true);
+            drawStars(g, u.stars, cellX(cell), cellY(cell) - 72 * s);
+            drawHeldItems(g, u, cellX(cell), cellY(cell) + 12 * s, 4.5f);
+        }
     }
 
-    private void drawUnitOnHex(Canvas g, Unit u, float cx, float cy, boolean back, boolean sel) {
-        if (sel) g.hexOutline(cx, cy, HEX * 0.94f, GOLD);
-        drawCreature(g, u.species, cx, cy - 2, 17, back);
-        drawStars(g, u.stars, cx, cy - 21);
-        drawHeldItems(g, u, cx, cy + 19, 4.5f);
+    private void drawTile(Canvas g, int cell, Color c, boolean outline) {
+        int r = Hex.row(cell);
+        float w = tileW(r) * 0.95f / 0.866f, h = tileH(r) * 0.95f;
+        float x = cellX(cell), y = cellY(cell);
+        if (outline) g.imageTinted(assets.hexOutline, x - w / 2, y - h / 2, w, h, c, false);
+        else g.imageTinted(assets.hex, x - w / 2, y - h / 2, w, h, c, false);
     }
 
-    /** Petites pastilles des objets tenus, centrées sous le Pokémon. */
+    private void drawFighter(Canvas g, Fighter f) {
+        float x = fx(f), y = fy(f), s = fScale(f);
+        AnimState a = anim(f);
+        g.alpha = f.alive ? 1f : Math.max(0f, 0.6f - a.t * 0.8f);
+        if (g.alpha <= 0) {
+            g.alpha = 1f;
+            return;
+        }
+        if (f.tauntTime > 0) g.ellipse(x, y, 30 * s, 12 * s, g.fade(ACCENT, 0.35f));
+        drawPokemon(g, f.species(), x, y, s, a.dir, a.name, a.t, !a.once);
+        if (f.stun > 0) g.ellipse(x, y - 28 * s, 32 * s, 32 * s, g.fade(Canvas.rgb(PType.ICE.rgb), 0.4f));
+        if (f.flash > 0) g.ellipse(x, y - 28 * s, 26 * s, 26 * s, g.fade(Canvas.rgb(0xFF5050), (float) (0.35 * f.flash)));
+        g.alpha = 1f;
+        if (!f.alive) return;
+
+        float bw = 50 * s, bx = x - bw / 2, by = y - 78 * s;
+        g.rect(bx - 1, by - 1, bw + 2, 10, TRACK);
+        double total = Math.max(f.maxHp, f.hp + f.shield);
+        float hpW = (float) (bw * f.hp / total), shW = (float) (bw * f.shield / total);
+        g.rect(bx, by, hpW, 5, f.player ? GOOD : ACCENT);
+        g.rect(bx + hpW, by, shW, 5, Canvas.rgb(0xDDE6F5));
+        g.rect(bx, by + 6, (float) (bw * Math.min(1, f.mana / f.maxMana)), 2, BLUE);
+        if (f.unit.stars > 1) drawStars(g, f.unit.stars, x, by - 3);
+        drawHeldItems(g, f.unit, x, y + 12 * s, 3.5f);
+
+        float sx = x + bw / 2 + 5, sy = by + 3;
+        if (f.burnTime > 0) sy = statusDot(g, sx, sy, Canvas.rgb(PType.FIRE.rgb));
+        if (f.poisonTime > 0) sy = statusDot(g, sx, sy, Canvas.rgb(PType.POISON.rgb));
+        if (f.paraTime > 0) sy = statusDot(g, sx, sy, Canvas.rgb(PType.ELECTRIC.rgb));
+        if (f.hasteTime > 0) statusDot(g, sx, sy, Canvas.rgb(0x5DFFB0));
+        if (f.sleep > 0) g.text(bold(13), "z", x + 16 * s, y - 54 * s - (clock % 1) * 6, Canvas.rgb(0xB7A6FF));
+    }
+
+    private float statusDot(Canvas g, float x, float y, Color c) {
+        g.ellipse(x, y, 3, 3, c);
+        return y + 7;
+    }
+
+    /**
+     * Dessine un Pokémon animé posé au point (gx, gy) : ombre, puis sprite PMD (ou sprite PokéAPI en secours).
+     * {@code persp} = facteur de perspective, {@code dir} = direction PMD.
+     */
+    private void drawPokemon(Canvas g, Species sp, float gx, float gy, float persp, int dir, String animName, float t, boolean loop) {
+        // ~60 px de haut à l'avant du plateau, entre x1,8 et x3 (pixel art)
+        float scale = persp * Math.max(1.8f, Math.min(3f, 60f / Math.max(16f, pmd.idleHeight(sp.dex))));
+        g.ellipse(gx, gy, 20 * persp, 7 * persp, g.fade(BLACK, 0.35f));
+        PmdSprites.Anim a = pmd.anim(sp.dex, animName);
+        if (a == null) {
+            TextureRegion img = assets.sprite(sp.dex, dir >= 3 && dir <= 5);
+            if (img == null) return;
+            float h = 52 * persp, w = h * img.getRegionWidth() / img.getRegionHeight();
+            g.image(img, gx - w / 2, gy - h + 4, w, h);
+            return;
+        }
+        PmdSprites.Frame fr = pmd.frame(a, dir, t, loop);
+        if (fr == null) return;
+        float w = fr.region.getRegionWidth() * scale, h = fr.region.getRegionHeight() * scale;
+        float y = gy + fr.oy * scale;
+        if (PmdSprites.mirrored(dir)) {
+            float x = gx - (fr.ox * scale) - w;
+            g.imageFlipped(fr.region, x, y, w, h);
+        } else {
+            g.image(fr.region, gx + fr.ox * scale, y, w, h);
+        }
+    }
+
+    private void drawPortrait(Canvas g, Species sp, float x, float y, float size) {
+        TextureRegion p = pmd.portrait(sp.dex);
+        if (p != null) {
+            g.rect(x - 1, y - 1, size + 2, size + 2, BLACK);
+            g.image(p, x, y, size, size);
+        } else {
+            drawPokemon(g, sp, x + size / 2, y + size * 0.85f, size / 60f, 0, "Idle", clock, true);
+        }
+    }
+
+    private void drawStars(Canvas g, int stars, float cx, float y) {
+        if (stars <= 1) return;
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < stars; i++) sb.append('★');
+        g.centered(bold(12), sb.toString(), cx, y, GOLD);
+    }
+
     private void drawHeldItems(Canvas g, Unit u, float cx, float y, float r) {
         int n = u.items.size();
         for (int i = 0; i < n; i++) {
@@ -568,73 +871,6 @@ public final class GameView extends InputAdapter {
         g.ellipse(cx, cy, r, r, Canvas.rgb(it.rgb));
         g.ellipse(cx, cy, r * 0.72f, r * 0.72f, g.fade(BLACK, 0.25f));
         g.centered(bold(10), it.abbr, cx, cy + 4, WHITE);
-    }
-
-    private void drawFighter(Canvas g, Fighter f) {
-        float x = fx(f), y = fy(f);
-        if (f.lunge > 0 && f.target != null) {
-            float dx = fx(f.target) - x, dy = fy(f.target) - y, len = (float) Math.sqrt(dx * dx + dy * dy);
-            if (len > 1) {
-                float k = (float) Math.sin(f.lunge * Math.PI) * 8 / len;
-                x += dx * k;
-                y += dy * k;
-            }
-        }
-        g.alpha = f.alive ? 1f : 0.15f;
-        if (f.tauntTime > 0) g.hexOutline(x, y, HEX * 0.94f, ACCENT);
-        drawCreature(g, f.species(), x, y - 2, 17, f.player);
-        if (f.stun > 0) g.ellipse(x, y - 4, 18, 18, g.fade(Canvas.rgb(PType.ICE.rgb), 0.45f));
-        if (f.flash > 0) g.ellipse(x, y - 4, 16, 16, g.fade(Canvas.rgb(0xFF5050), (float) (0.45 * f.flash)));
-        g.alpha = 1f;
-        if (!f.alive) return;
-
-        // barres : PV (+ bouclier) et mana
-        float bw = 38, bx = x - bw / 2, by = y - 28;
-        g.rect(bx - 1, by - 1, bw + 2, 9, TRACK);
-        double total = Math.max(f.maxHp, f.hp + f.shield);
-        float hpW = (float) (bw * f.hp / total), shW = (float) (bw * f.shield / total);
-        g.rect(bx, by, hpW, 4, f.player ? GOOD : ACCENT);
-        g.rect(bx + hpW, by, shW, 4, Canvas.rgb(0xDDE6F5));
-        g.rect(bx, by + 5, (float) (bw * Math.min(1, f.mana / f.maxMana)), 2, BLUE);
-        if (f.unit.stars > 1) drawStars(g, f.unit.stars, x, by - 3);
-        drawHeldItems(g, f.unit, x, y + 19, 3.5f);
-
-        // pastilles de statut
-        float sx = x + bw / 2 + 4, sy = by + 2;
-        if (f.burnTime > 0) sy = statusDot(g, sx, sy, Canvas.rgb(PType.FIRE.rgb));
-        if (f.poisonTime > 0) sy = statusDot(g, sx, sy, Canvas.rgb(PType.POISON.rgb));
-        if (f.paraTime > 0) sy = statusDot(g, sx, sy, Canvas.rgb(PType.ELECTRIC.rgb));
-        if (f.hasteTime > 0) sy = statusDot(g, sx, sy, Canvas.rgb(0x5DFFB0));
-        if (f.sleep > 0) g.text(bold(12), "z", x + 10, y - 12, Canvas.rgb(0xB7A6FF));
-    }
-
-    private float statusDot(Canvas g, float x, float y, Color c) {
-        g.ellipse(x, y, 3, 3, c);
-        return y + 7;
-    }
-
-    /** Sprite PokéAPI posé sur un socle aux couleurs de son type principal. */
-    private void drawCreature(Canvas g, Species sp, float cx, float cy, float rad, boolean back) {
-        Color c1 = Canvas.rgb(sp.types[0].rgb);
-        g.ellipse(cx, cy + rad * 0.92f, rad * 1.1f, rad * 0.37f, g.fade(c1, 0.35f));
-        g.ellipse(cx, cy + rad * 0.92f, rad * 0.8f, rad * 0.22f, g.fade(BLACK, 0.25f));
-        TextureRegion img = assets.sprite(sp.dex, back);
-        if (img == null) {
-            g.ellipse(cx, cy, rad, rad, c1);
-            return;
-        }
-        float box = rad * 2.6f;
-        float scale = Math.min(3f, Math.min(box / img.getRegionWidth(), box / img.getRegionHeight()));
-        float w = img.getRegionWidth() * scale, h = img.getRegionHeight() * scale;
-        float bottom = cy + rad * 0.95f;
-        g.image(img, cx - w / 2, bottom - h, w, h);
-    }
-
-    private void drawStars(Canvas g, int stars, float cx, float y) {
-        if (stars <= 1) return;
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < stars; i++) sb.append('★');
-        g.centered(bold(11), sb.toString(), cx, y, GOLD);
     }
 
     private void drawSynergies(Canvas g) {
@@ -666,7 +902,7 @@ public final class GameView extends InputAdapter {
             StringBuilder ths = new StringBuilder();
             for (int i = 0; i < th.length; i++) ths.append(i == 0 ? "" : " · ").append(th[i]);
             typeBadge(g, t, LEFT.x + 10, y, active ? 1f : 0.45f);
-            g.text(bold(12), counts.get(t) + "  (" + ths + ")", LEFT.x + 82, y + 13, active ? TEXT : MUTED);
+            g.text(bold(12), counts.get(t) + "  (" + ths + ")", LEFT.x + 84, y + 13, active ? TEXT : MUTED);
             if (active) {
                 g.text(regular(12), Synergies.describe(t, lvl), LEFT.x + 12, y + 31, SOFT);
                 y += 42;
@@ -678,7 +914,7 @@ public final class GameView extends InputAdapter {
 
     private void drawInfo(Canvas g) {
         g.round(RIGHT.x, RIGHT.y, RIGHT.w, RIGHT.h, PANEL);
-        float x = RIGHT.x + 16, y = RIGHT.y + 28;
+        float x = RIGHT.x + 14, y = RIGHT.y + 14;
 
         Unit unit = null;
         Species sp = null;
@@ -709,96 +945,101 @@ public final class GameView extends InputAdapter {
         if (hoverItem >= 0 && hoverItem < state.items.size()) {
             drawItemInfo(g, state.items.get(hoverItem), x, y);
         } else if (sp == null) {
-            g.text(bold(15), "Comment jouer", x, y, TEXT);
+            g.text(bold(15), "Comment jouer", x, y + 14, TEXT);
             String[] lines = {
-                    "• Clique une carte de la boutique pour acheter.",
-                    "• Glisse un Pokémon sur une case de ton camp (en bas).",
-                    "• Au combat, chacun fonce sur l'ennemi le plus proche :",
-                    "  corps à corps devant, attaquants à distance derrière.",
-                    "• Mana plein : capacité unique (survole pour la voir).",
-                    "• 3 exemplaires identiques fusionnent (évolution, ★).",
-                    "• Clic droit ou glisser vers la boutique : vendre.",
-                    "• Les types donnent des synergies (panneau de gauche).",
-                    "• Chaque tranche de 10 or rapporte 1 or d'intérêt.",
-                    "• Après 30 s de combat, les dégâts augmentent."
+                    "• Achète des Pokémon dans la boutique.",
+                    "• Glisse-les sur ton camp (en bas du plateau).",
+                    "• Chacun fonce sur l'ennemi le plus proche :",
+                    "  corps à corps devant, distance derrière.",
+                    "• Mana plein : capacité unique.",
+                    "• 3 exemplaires identiques fusionnent.",
+                    "• Glisse les objets sur tes Pokémon :",
+                    "  2 composants = 1 objet combiné.",
+                    "• Le niveau fixe la taille de l'équipe.",
+                    "• Clic droit ou glisser sur la boutique : vendre.",
+                    "• 10 or en réserve = +1 or par manche.",
+                    "• Après 30 s de combat, les dégâts montent."
             };
-            float ly = y + 26;
+            float ly = y + 40;
             for (String l : lines) {
                 g.text(regular(13), l, x, ly, SOFT);
-                ly += 20;
+                ly += 19;
             }
         } else {
             int stars = unit == null ? 1 : unit.stars;
-            g.text(bold(22), sp.name + (stars > 1 ? "  " + stars + "★" : ""), x, y, TEXT);
-            g.right(regular(12), "N° " + sp.dex + " · Tier " + sp.tier + " · " + sp.tier + " or", RIGHT.x + RIGHT.w - 16, y, MUTED);
-            float bx = x;
+            drawPortrait(g, sp, x, y, 64);
+            float hx = x + 76;
+            g.text(bold(22), sp.name, hx, y + 20, TEXT);
+            if (stars > 1) g.text(bold(15), stars + "★", hx + g.width(bold(22), sp.name) + 8, y + 19, GOLD);
+            float bx = hx;
             for (PType t : sp.types) {
-                typeBadge(g, t, bx, y + 12, 1f);
+                typeBadge(g, t, bx, y + 30, 1f);
                 bx += 72;
             }
             int range = sp.range();
-            g.right(regular(12), range <= 1 ? "Corps à corps" : "Distance · portée " + range, RIGHT.x + RIGHT.w - 16, y + 25, SOFT);
+            g.text(regular(12), "Tier " + sp.tier + " · " + (range <= 1 ? "corps à corps" : "distance (portée " + range + ")"), hx, y + 62, MUTED);
+
             Unit probe = unit != null ? unit : new Unit(sp, 1, sp.tier);
             Fighter f = new Fighter(probe, true, 0, 0, null);
-            float sy = y + 48;
-            statLine(g, "PV", (int) f.maxHp, 700, x, sy);
-            statLine(g, "Attaque", (int) f.atk, 300, x, sy + 22);
-            statLine(g, "Défense", (int) f.def, 130, x, sy + 44);
-            g.text(regular(13), "Attaques / s", x, sy + 66 + 12, MUTED);
-            g.text(bold(13), fmt2(1 / f.interval), x + 110, sy + 66 + 12, TEXT);
+            float sy = y + 80;
+            statLine(g, "PV", (int) f.maxHp, 900, x, sy);
+            statLine(g, "Attaque", (int) f.atk, 300, x, sy + 20);
+            statLine(g, "Défense", (int) f.def, 150, x, sy + 40);
+            g.text(regular(13), "Attaques / s", x, sy + 72, MUTED);
+            g.text(bold(13), fmt2(1 / f.interval), x + 96, sy + 72, TEXT);
 
-            float ty = sy + 104;
+            float ty = sy + 102;
             Ability a = sp.ability();
-            g.text(bold(13), "Capacité : " + a.label, x, ty, GOLD);
-            g.right(regular(12), (int) f.maxMana + " mana (départ " + a.startMana + ")", RIGHT.x + RIGHT.w - 16, ty, MUTED);
-            g.wrap(regular(13), a.description, x, ty + 19, RIGHT.w - 32, 17, SOFT);
+            g.text(bold(13), a.label, x, ty, GOLD);
+            g.right(regular(12), (int) f.maxMana + " mana (départ " + a.startMana + ")", RIGHT.x + RIGHT.w - 14, ty, MUTED);
+            g.wrap(regular(13), a.description, x, ty + 19, RIGHT.w - 28, 17, SOFT);
             Unit m = probe.merged();
             String evo = m == null ? "Niveau maximal atteint."
-                    : m.species != probe.species ? "3 exemplaires → évolue en " + m.species.name
+                    : m.species != probe.species ? "3 exemplaires → " + m.species.name
                     : "3 exemplaires → " + m.stars + "★";
-            g.text(regular(13), evo, x, ty + 58, SOFT);
-            if (owned && unit != null) g.right(regular(13), "Revente : " + unit.invested + " or", RIGHT.x + RIGHT.w - 16, ty + 58, GOLD);
+            g.text(regular(13), evo, x, ty + 60, SOFT);
+            if (owned) g.right(regular(13), "Revente : " + unit.invested + " or", RIGHT.x + RIGHT.w - 14, ty + 60, GOLD);
             if (unit != null && !unit.items.isEmpty()) {
-                float ix = x;
+                float iy = ty + 84;
                 for (Item it : unit.items) {
-                    drawItemIcon(g, it, ix + 9, ty + 80, 9);
-                    g.text(regular(12), it.name, ix + 22, ty + 84, SOFT);
-                    ix += 26 + g.width(regular(12), it.name) + 10;
+                    drawItemIcon(g, it, x + 9, iy - 4, 9);
+                    g.text(regular(12), it.name + " — " + shorten(it.description, 34), x + 24, iy, SOFT);
+                    iy += 20;
                 }
             }
         }
 
         if (state.message != null && !state.message.isEmpty()) {
             g.round(RIGHT.x + 8, RIGHT.y + RIGHT.h - 40, RIGHT.w - 16, 32, PANEL_LIGHT);
-            g.text(bold(13), state.message, RIGHT.x + 18, RIGHT.y + RIGHT.h - 19, GOLD);
+            g.wrap(bold(12), state.message, RIGHT.x + 16, RIGHT.y + RIGHT.h - 25, RIGHT.w - 32, 14, GOLD);
         }
     }
 
     private void drawItemInfo(Canvas g, Item it, float x, float y) {
-        drawItemIcon(g, it, x + 14, y - 5, 14);
-        g.text(bold(22), it.name, x + 38, y, TEXT);
-        g.right(regular(12), it.isComponent() ? "Composant" : "Objet combiné", RIGHT.x + RIGHT.w - 16, y, MUTED);
-        g.text(bold(13), it.statsText(), x, y + 34, BLUE);
+        drawItemIcon(g, it, x + 16, y + 14, 16);
+        g.text(bold(22), it.name, x + 42, y + 22, TEXT);
+        g.text(regular(12), it.isComponent() ? "Composant" : "Objet combiné", x + 42, y + 40, MUTED);
+        g.text(bold(13), it.statsText(), x, y + 64, BLUE);
         if (it.isComponent()) {
-            g.text(regular(13), "Glisse-le sur un Pokémon. Deux composants sur le même", x, y + 60, SOFT);
-            g.text(regular(13), "Pokémon se combinent en objet plus puissant :", x, y + 78, SOFT);
-            float ly = y + 104;
+            g.text(regular(13), "Deux composants sur le même Pokémon", x, y + 88, SOFT);
+            g.text(regular(13), "se combinent :", x, y + 106, SOFT);
+            float ly = y + 132;
             for (Item other : Item.COMPONENTS) {
                 Item c = Item.combine(it, other);
                 drawItemIcon(g, other, x + 9, ly - 4, 8);
                 g.text(regular(12), "→", x + 22, ly, MUTED);
                 drawItemIcon(g, c, x + 44, ly - 4, 8);
                 g.text(bold(12), c.name, x + 58, ly, TEXT);
-                g.text(regular(12), shorten(c.description, 33), x + 160, ly, SOFT);
-                ly += 22;
+                g.text(regular(12), shorten(c.description, 30), x + 58, ly + 13, SOFT);
+                ly += 32;
             }
         } else {
-            g.wrap(regular(13), it.description, x, y + 60, RIGHT.w - 32, 18, SOFT);
-            drawItemIcon(g, it.a, x + 9, y + 116, 9);
-            g.text(regular(13), it.a.name + "  +", x + 24, y + 120, MUTED);
+            g.wrap(regular(13), it.description, x, y + 90, RIGHT.w - 28, 18, SOFT);
+            drawItemIcon(g, it.a, x + 9, y + 146, 9);
+            g.text(regular(13), it.a.name + "  +", x + 24, y + 150, MUTED);
             float bx = x + 24 + g.width(regular(13), it.a.name + "  +") + 16;
-            drawItemIcon(g, it.b, bx, y + 116, 9);
-            g.text(regular(13), it.b.name, bx + 15, y + 120, MUTED);
+            drawItemIcon(g, it.b, bx, y + 146, 9);
+            g.text(regular(13), it.b.name, bx + 15, y + 150, MUTED);
         }
     }
 
@@ -819,9 +1060,9 @@ public final class GameView extends InputAdapter {
 
     private void statLine(Canvas g, String label, int value, int max, float x, float y) {
         g.text(regular(13), label, x, y + 12, MUTED);
-        g.round(x + 110, y + 2, 200, 12, TRACK);
-        g.round(x + 110, y + 2, 200 * Math.min(1f, value / (float) max), 12, BLUE);
-        g.text(bold(13), String.valueOf(value), x + 320, y + 13, TEXT);
+        g.round(x + 96, y + 3, 170, 11, TRACK);
+        g.round(x + 96, y + 3, 170 * Math.min(1f, value / (float) max), 11, BLUE);
+        g.text(bold(13), String.valueOf(value), x + 274, y + 13, TEXT);
     }
 
     private void drawBench(Canvas g) {
@@ -833,28 +1074,54 @@ public final class GameView extends InputAdapter {
             Unit u = state.bench[i];
             if (u == null || (dragging && pressSlot == i)) continue;
             if (selected == i) highlight(g, r, GOLD);
-            drawCreature(g, u.species, r.cx(), r.cy() - 4, 22, false);
-            drawStars(g, u.stars, r.cx(), r.y + 14);
-            drawHeldItems(g, u, r.cx(), r.y + r.h - 22, 4f);
-            g.centered(bold(11), u.species.name, r.cx(), r.y + r.h - 6, TEXT);
+            drawPokemon(g, u.species, r.cx(), r.y + r.h - 16, 0.85f, 0, "Idle", clock + i * 0.3f, true);
+            drawStars(g, u.stars, r.cx(), r.y + 13);
+            drawHeldItems(g, u, r.cx(), r.y + r.h - 9, 4f);
         }
     }
 
     private void drawInventory(Canvas g) {
-        g.text(bold(12), "OBJETS (" + state.items.size() + "/" + GameState.MAX_INVENTORY + ")", INV_X, INV_Y - 6, MUTED);
+        g.text(bold(12), "OBJETS " + state.items.size() + "/" + GameState.MAX_INVENTORY, INV_X, INV_Y - 6, MUTED);
         for (int i = 0; i < GameState.MAX_INVENTORY; i++) {
             Rect r = invRect(i);
             g.round(r.x, r.y, r.w, r.h, PANEL);
             if (i >= state.items.size() || (dragging && pressItem == i)) continue;
             if (r.contains(mx, my) && state.phase == GameState.Phase.PREP) g.outline(r.x, r.y, r.w, r.h, GOLD);
-            drawItemIcon(g, state.items.get(i), r.cx(), r.cy(), 12);
+            drawItemIcon(g, state.items.get(i), r.cx(), r.cy(), 11);
         }
     }
 
+    private void drawLevelPanel(Canvas g) {
+        Rect p = LEVEL_PANEL;
+        g.round(p.x, p.y, p.w, p.h, PANEL);
+        g.text(bold(22), "Niveau " + state.level, p.x + 12, p.y + 30, TEXT);
+        int need = state.xpToNext();
+        g.round(p.x + 12, p.y + 42, p.w - 24, 14, TRACK);
+        if (need > 0) {
+            g.round(p.x + 12, p.y + 42, (p.w - 24) * state.xp / (float) need, 14, PURPLE);
+            g.centered(bold(11), "XP " + state.xp + " / " + need, p.cx(), p.y + 53, WHITE);
+        } else {
+            g.round(p.x + 12, p.y + 42, p.w - 24, 14, PURPLE);
+            g.centered(bold(11), "NIVEAU MAX", p.cx(), p.y + 53, WHITE);
+        }
+        int[] odds = GameState.shopOdds(state.level);
+        g.text(regular(12), "Tiers : ", p.x + 12, p.y + 76, MUTED);
+        float ox = p.x + 54;
+        Color[] tc = {TIER1, TIER2, TIER3};
+        for (int i = 0; i < 3; i++) {
+            String s = odds[i] + "%";
+            g.text(bold(12), s, ox, p.y + 76, tc[i].cpy().lerp(WHITE, 0.35f));
+            ox += g.width(bold(12), s) + 10;
+        }
+        g.text(bold(22), "● " + state.gold, p.x + 12, p.y + 112, GOLD);
+        int interest = Math.min(5, state.gold / 10);
+        g.text(regular(12), "intérêts +" + interest, p.x + 12, p.y + 130, MUTED);
+    }
+
     private void drawShop(Canvas g) {
-        g.text(bold(12), dragging ? "DÉPOSE ICI POUR VENDRE" : "BOUTIQUE" + (state.shopLocked ? "  (verrouillée)" : ""),
+        g.text(bold(12), dragging && pressSlot >= 0 ? "DÉPOSE ICI POUR VENDRE" : "BOUTIQUE" + (state.shopLocked ? "  (verrouillée)" : ""),
                 SHOP_X, SHOP_Y - 6, MUTED);
-        if (dragging) highlight(g, SHOP_AREA, ACCENT);
+        if (dragging && pressSlot >= 0) highlight(g, SHOP_AREA, ACCENT);
         boolean prep = state.phase == GameState.Phase.PREP;
         for (int i = 0; i < GameState.SHOP; i++) {
             Rect r = shopRect(i);
@@ -864,15 +1131,18 @@ public final class GameView extends InputAdapter {
             if (!prep) g.alpha = 0.4f;
             Color tierColor = sp.tier == 1 ? TIER1 : sp.tier == 2 ? TIER2 : TIER3;
             boolean hover = r.contains(mx, my) && prep;
+            g.round(r.x, r.y, r.w, 60, g.fade(tierColor, 0.25f));
             g.outline(r.x, r.y, r.w, r.h, hover ? GOLD : tierColor);
-            drawCreature(g, sp, r.cx(), r.y + 40, 26, false);
-            g.centered(bold(13), sp.name, r.cx(), r.y + 84, TEXT);
-            float tx = r.x + (r.w - (sp.types.length * 54 - 4)) / 2;
+            drawPortrait(g, sp, r.x + 10, r.y + 10, 48);
+            drawPokemon(g, sp, r.x + r.w - 36, r.y + 60, 0.7f, 1, "Idle", clock + i * 0.5f, true);
+            g.text(bold(13), sp.name, r.x + 10, r.y + 80, TEXT);
+            float tx = r.x + 10;
             for (PType t : sp.types) {
-                smallBadge(g, t, tx, r.y + 92);
+                smallBadge(g, t, tx, r.y + 90);
                 tx += 54;
             }
-            g.centered(bold(13), "● " + sp.tier, r.cx(), r.y + 128, state.gold >= sp.tier ? GOLD : ACCENT);
+            g.text(regular(12), sp.range() <= 1 ? "Corps à corps" : "Distance " + sp.range(), r.x + 10, r.y + 130, MUTED);
+            g.right(bold(15), "● " + sp.tier, r.x + r.w - 10, r.y + 131, state.gold >= sp.tier ? GOLD : ACCENT);
             g.alpha = 1f;
         }
     }
@@ -905,10 +1175,17 @@ public final class GameView extends InputAdapter {
         }
     }
 
+    private void drawParticles(Canvas g) {
+        for (Particle p : particles) {
+            float a = p.life / p.maxLife;
+            g.ellipse(p.x, p.y, p.size, p.size, g.fade(p.color, a));
+        }
+    }
+
     private void drawFloaters(Canvas g) {
         for (Floater f : floaters) {
             float a = Math.max(0, Math.min(1, f.life / 0.4f));
-            BitmapFont font = bold(f.big ? 15 : 12);
+            BitmapFont font = bold(f.big ? 15 : 13);
             g.centered(font, f.text, f.x + 1, f.y + 1, g.fade(BLACK, 0.6f * a));
             g.centered(font, f.text, f.x, f.y, g.fade(f.color, a));
         }
@@ -917,9 +1194,9 @@ public final class GameView extends InputAdapter {
     private void drawOverlay(Canvas g) {
         if (state.phase != GameState.Phase.RESULT && state.phase != GameState.Phase.GAMEOVER) return;
         Rect a = ARENA;
-        float bw = 300, bh = 140;
+        float bw = 320, bh = 140;
         float x = a.x + (a.w - bw) / 2, y = a.y + (a.h - bh) / 2;
-        g.rect(a.x, a.y, a.w, a.h, g.fade(BLACK, 0.47f));
+        g.round(a.x, a.y, a.w, a.h, g.fade(BLACK, 0.45f));
         g.round(x, y, bw, bh, PANEL);
         boolean over = state.phase == GameState.Phase.GAMEOVER;
         g.centered(bold(22), over ? "Partie terminée" : state.lastWin ? "Victoire !" : "Défaite", x + bw / 2, y + 42,
@@ -928,9 +1205,9 @@ public final class GameView extends InputAdapter {
                 : state.lastWin ? "Tes Pokémon ont gagné la manche." : "Tu perds " + state.lastDamage + " PV.", x + bw / 2, y + 66, TEXT);
         if (!over && !state.lastLoot.isEmpty()) {
             int n = state.lastLoot.size();
-            for (int i = 0; i < n; i++) drawItemIcon(g, state.lastLoot.get(i), x + bw / 2 + (i - (n - 1) / 2f) * 30, y + 84, 10);
+            for (int i = 0; i < n; i++) drawItemIcon(g, state.lastLoot.get(i), x + bw / 2 + (i - (n - 1) / 2f) * 30, y + 88, 10);
         }
-        g.centered(regular(13), "Clique pour " + (over ? "rejouer" : "continuer"), x + bw / 2, y + 122, MUTED);
+        g.centered(regular(13), "Clique pour " + (over ? "rejouer" : "continuer"), x + bw / 2, y + 124, MUTED);
     }
 
     private void drawDragged(Canvas g) {
@@ -941,8 +1218,7 @@ public final class GameView extends InputAdapter {
         if (!dragging || pressSlot < 0) return;
         Unit u = state.get(pressSlot);
         if (u == null) return;
-        drawCreature(g, u.species, mx, my, 22, false);
-        drawStars(g, u.stars, mx, my - 26);
+        drawPokemon(g, u.species, mx, my + 20, 1f, 0, "Walk", clock, true);
     }
 
     // ================================================================== éléments d'interface
@@ -966,7 +1242,7 @@ public final class GameView extends InputAdapter {
         boolean hover = enabled && r.contains(mx, my);
         Color c = !enabled ? DISABLED : hover ? new Color(base).lerp(WHITE, 0.15f) : base;
         g.round(r.x, r.y, r.w, r.h, c);
-        BitmapFont f = bold(r.h > 60 ? 22 : 15);
+        BitmapFont f = bold(r == BTN_MAIN ? 18 : 15);
         g.centered(f, label, r.cx(), r.cy() + f.getCapHeight() / 2, enabled ? WHITE : MUTED);
     }
 }

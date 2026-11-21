@@ -55,7 +55,9 @@ Chaque PR doit mettre à jour `CLAUDE.md` : c'est vérifié automatiquement par 
 
 ## Crédits
 
-- Sprites : [PokéAPI/sprites](https://github.com/PokeAPI/sprites).
+- Sprites animés et portraits : [PMDCollab SpriteCollab](https://github.com/PMDCollab/SpriteCollab), licence [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/) — auteurs listés dans [CREDITS-PMD.md](CREDITS-PMD.md).
+- Sprites de secours : [PokéAPI/sprites](https://github.com/PokeAPI/sprites).
+- Bruitages et musique : synthétisés par `tools/gen_audio.py` pour ce projet.
 - Police : [Fira Sans](https://github.com/mozilla/Fira) (SIL Open Font License), avec DejaVu Sans pour quelques symboles.
 
 ---
