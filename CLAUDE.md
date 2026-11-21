@@ -57,5 +57,5 @@ python3 tools/gen_assets.py              # régénère assets/ (Pillow requis)
 ## Notes pour Claude
 
 - L'environnement cloud de Claude n'a pas accès à Maven Central ni au portail Gradle : impossible d'y lancer `./gradlew`. Pour vérifier la compilation localement, compiler contre les sources de libGDX (clone partiel de `libgdx/libgdx`, dossier `gdx/src`), puis s'appuyer sur la CI (logs lisibles avec `gh run view --log`). Hors `main`, le workflow imprime les captures du test de fumée en base64 dans les logs.
-- Versions alignées sur la matrice de gdx-teavm : gdx-teavm 1.6.1 ↔ libGDX 1.14.2 ↔ TeaVM 0.15.0, Gradle 9.6.1.
+- Versions alignées sur la matrice de gdx-teavm : gdx-teavm 1.6.2 ↔ libGDX 1.14.2 ↔ TeaVM 0.15.0, Gradle 9.6.1.
 - Sprites : PokéAPI/sprites. Polices : Fira Sans (OFL), repli DejaVu Sans pour ★ ● →.

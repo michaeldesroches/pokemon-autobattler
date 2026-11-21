@@ -1,10 +1,10 @@
 import org.teavm.gradle.api.OptimizationLevel
 
 plugins {
-    id("com.github.xpenatan.gdx-teavm") version "1.6.1"
+    id("com.github.xpenatan.gdx-teavm") version "1.6.2"
 }
 
-val gdxVersion: String by project
+val gdxVersion = providers.gradleProperty("gdxVersion").get()
 
 dependencies {
     implementation("com.badlogicgames.gdx:gdx:$gdxVersion")

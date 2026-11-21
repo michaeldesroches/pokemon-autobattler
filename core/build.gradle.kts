@@ -2,7 +2,7 @@ plugins {
     `java-library`
 }
 
-val gdxVersion: String by project
+val gdxVersion = providers.gradleProperty("gdxVersion").get()
 
 dependencies {
     api("com.badlogicgames.gdx:gdx:$gdxVersion")

@@ -2,7 +2,7 @@ plugins {
     application
 }
 
-val gdxVersion: String by project
+val gdxVersion = providers.gradleProperty("gdxVersion").get()
 
 dependencies {
     implementation(project(":core"))
