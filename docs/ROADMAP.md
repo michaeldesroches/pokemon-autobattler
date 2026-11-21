@@ -19,7 +19,7 @@ Les estimations supposent un dev seul en soirées, environ 10 h par semaine.
 
 Swing + CheerpJ suffisait pour le prototype. Pour quelque chose qui ressemble à TFT (beaucoup d'animations, effets visuels, son), le jeu est passé sur **libGDX** : un vrai moteur de jeu 2D en Java, avec export web via TeaVM ([gdx-teavm](https://github.com/xpenatan/gdx-teavm)).
 
-- Le build web est compilé et déployé sur GitHub Pages par GitHub Actions.
+- Le build web est compilé par GitHub Actions et déployé sur Cloudflare Workers (accès réservé par Cloudflare Access).
 - Le moteur (`Battle`, `GameState`, `Pokedex`) a été réutilisé tel quel. Seul l'affichage a été réécrit.
 
 ## Étape 1 : moteur de combat façon TFT (2 à 3 semaines) — fait

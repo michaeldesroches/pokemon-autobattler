@@ -4,7 +4,7 @@ Contexte projet pour Claude (et pour les humains). **Ce fichier doit être mis �
 
 ## Le projet
 
-Auto battler façon TFT avec des Pokémon de 1re génération, écrit en **Java** avec **libGDX 1.14**. Il tourne sur desktop (LWJGL3) et dans le navigateur (TeaVM via [gdx-teavm](https://github.com/xpenatan/gdx-teavm)). Le build web est déployé sur GitHub Pages (https://michaeldesroches.github.io/pokemon-autobattler/) et sur Cloudflare Workers en « static assets » (`wrangler.jsonc`, voir `docs/DEPLOIEMENT-CLOUDFLARE.md`).
+Auto battler façon TFT avec des Pokémon de 1re génération, écrit en **Java** avec **libGDX 1.14**. Il tourne sur desktop (LWJGL3) et dans le navigateur (TeaVM via [gdx-teavm](https://github.com/xpenatan/gdx-teavm)). Le build web est déployé uniquement sur Cloudflare Workers en « static assets » (https://pokemon-autobattler.michael-desroches-perso.workers.dev, `wrangler.jsonc`, voir `docs/DEPLOIEMENT-CLOUDFLARE.md`), **protégé par Cloudflare Access** (accès réservé, configuré dans le tableau de bord Cloudflare). GitHub Pages n'est plus utilisé (retiré pour ne pas exposer publiquement le jeu).
 
 Objectif long terme : une version façon TFT (grille hexagonale, déplacements, objets, lobby 8 joueurs). Voir `docs/ROADMAP.md`.
 
@@ -66,9 +66,9 @@ python3 tools/gen_audio.py               # régénère sfx/ et music/ (numpy + f
 
 ## CI / déploiement
 
-- `.github/workflows/build.yml` : sur chaque push et PR, compile, lance les tests et la simulation, construit le web, puis lance le test de fumée dans Chromium (captures en artefact `screenshots`). Sur `main`, déploie sur GitHub Pages (job `deploy`) et sur Cloudflare (job `cloudflare`, `wrangler deploy`). Sur une PR interne, job `cloudflare-preview` : `wrangler versions upload --preview-alias pr-<n>` + commentaire avec l'URL d'aperçu. Le build web est transmis entre jobs par l'artefact `webapp`.
+- `.github/workflows/build.yml` : sur chaque push et PR, compile, lance les tests et la simulation, construit le web, puis lance le test de fumée dans Chromium (captures en artefact `screenshots`). Sur `main`, déploie sur Cloudflare (job `cloudflare`, `wrangler deploy`). Sur une PR interne, job `cloudflare-preview` : `wrangler versions upload --preview-alias pr-<n>` + commentaire avec l'URL d'aperçu. Le build web est transmis entre jobs par l'artefact `webapp`.
 - Cloudflare : `wrangler.jsonc` à la racine (Worker `pokemon-autobattler`, assets = `teavm/build/dist/js/webapp`). Secrets requis : `CLOUDFLARE_API_TOKEN` (modèle « Edit Cloudflare Workers ») et `CLOUDFLARE_ACCOUNT_ID`. Sans eux, les jobs Cloudflare se terminent sans rien faire. Vérifier la config sans compte : `npx wrangler@4 deploy --dry-run` (après un build web, ou avec un dossier factice). Procédure complète : `docs/DEPLOIEMENT-CLOUDFLARE.md`. Les étapes Wrangler utilisent `set -o pipefail` (sinon `| tee` masque les échecs) et le job de production affiche `wrangler whoami` pour diagnostiquer les erreurs d'accès (tableau de dépannage dans la doc).
-- GitHub Pages doit être configuré avec la source **GitHub Actions** (Settings → Pages).
+- Cloudflare Access protège l'URL `workers.dev` et les URL d'aperçu (Worker → Settings → Domains & Routes → Enable Cloudflare Access). C'est de la configuration du tableau de bord, rien dans le dépôt. Ne pas réintroduire de déploiement public (GitHub Pages ou autre) sans accord.
 - `.github/workflows/claude-md.yml` : vérifie que chaque PR modifie `CLAUDE.md`. Pour le rendre bloquant, l'ajouter comme check requis dans la protection de la branche `main`.
 
 ## Notes pour Claude
