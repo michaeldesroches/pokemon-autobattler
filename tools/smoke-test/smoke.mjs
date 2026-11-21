@@ -37,7 +37,17 @@ for (let i = 0; i < 3; i++) {
   await page.mouse.up();
   await page.waitForTimeout(300);
 }
-await page.mouse.move(57, 473); // survol : panneau d'info
+// Survol de l'objet de départ (panneau d'info), puis on le glisse sur le premier Pokémon placé
+await page.mouse.move(751, 451);
+await page.waitForTimeout(300);
+await page.screenshot({ path: `${outDir}/2a-objet.png` });
+await page.mouse.down();
+await page.mouse.move(200 + HEX_W / 2 + HEX_W * 2, 58 + 28 + 42 * 4, { steps: 10 });
+await page.mouse.up();
+await page.waitForTimeout(300);
+await page.mouse.click(904, 560); // Acheter XP
+await page.waitForTimeout(300);
+await page.mouse.move(200 + HEX_W / 2 + HEX_W * 2, 58 + 28 + 42 * 4); // survol : panneau d'info du Pokémon équipé
 await page.waitForTimeout(300);
 await page.screenshot({ path: `${outDir}/2-equipe.png` });
 

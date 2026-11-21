@@ -5,6 +5,7 @@ import autobattler.Battle;
 import autobattler.Fighter;
 import autobattler.GameState;
 import autobattler.Hex;
+import autobattler.Item;
 import autobattler.PType;
 import autobattler.Species;
 import autobattler.Synergies;
@@ -43,8 +44,11 @@ public final class GameView extends InputAdapter {
     private static final Rect SHOP_AREA = new Rect(SHOP_X, SHOP_Y, 5 * SHOP_STEP, SHOP_H);
     private static final Rect BTN_A = new Rect(650, 540, 160, 40);
     private static final Rect BTN_B = new Rect(824, 540, 160, 40);
-    private static final Rect BTN_C = new Rect(650, 590, 160, 86);
+    private static final Rect BTN_LOCK = new Rect(650, 590, 160, 40);
+    private static final Rect BTN_SELL = new Rect(650, 636, 160, 40);
     private static final Rect BTN_MAIN = new Rect(824, 590, 160, 86);
+    private static final int INV_X = 728, INV_Y = 432, INV_W = 46, INV_H = 38, INV_GAP = 5;
+    private static final Rect INV_AREA = new Rect(INV_X, INV_Y, 5 * INV_W + 4 * INV_GAP, 2 * INV_H + INV_GAP);
 
     public static final Color BG = Canvas.rgb(0x1B1F2A);
     private static final Color PANEL = Canvas.rgb(0x262C3A);
@@ -79,6 +83,8 @@ public final class GameView extends InputAdapter {
 
     private int selected = -1;
     private int pressSlot = -1;
+    /** Objet de l'inventaire en cours de glisser (index), ou -1. */
+    private int pressItem = -1;
     private boolean pressed;
     private float pressX, pressY;
     private boolean dragging;
@@ -176,8 +182,10 @@ public final class GameView extends InputAdapter {
                 ev.src.lunge = 1;
                 ev.tgt.flash = 1;
                 Color c = ev.mult > 1.01 ? ORANGE : ev.mult < 0.99 ? MUTED : WHITE;
-                String txt = Math.round(ev.amount) + (ev.mult > 1.01 ? "!" : "");
-                floaters.add(new Floater(fx(ev.tgt) + (float) ((Math.random() - 0.5) * 16), fy(ev.tgt) - 34, txt, c, ev.special));
+                boolean crit = "crit".equals(ev.text);
+                if (crit) c = Canvas.rgb(0xFF5A36);
+                String txt = Math.round(ev.amount) + (ev.mult > 1.01 || crit ? "!" : "");
+                floaters.add(new Floater(fx(ev.tgt) + (float) ((Math.random() - 0.5) * 16), fy(ev.tgt) - 34, txt, c, ev.special || crit));
                 if (ev.src.range > 1 && !ev.special) projectiles.add(new Projectile(ev.src, ev.tgt, Canvas.rgb(ev.type.rgb)));
                 break;
             }
@@ -257,6 +265,15 @@ public final class GameView extends InputAdapter {
         return -1;
     }
 
+    private static Rect invRect(int i) {
+        return new Rect(INV_X + (i % 5) * (INV_W + INV_GAP), INV_Y + (i / 5) * (INV_H + INV_GAP), INV_W, INV_H);
+    }
+
+    private int invAt(float x, float y) {
+        for (int i = 0; i < state.items.size(); i++) if (invRect(i).contains(x, y)) return i;
+        return -1;
+    }
+
     private static Rect shopRect(int i) {
         return new Rect(SHOP_X + i * SHOP_STEP, SHOP_Y, SHOP_W, SHOP_H);
     }
@@ -300,7 +317,13 @@ public final class GameView extends InputAdapter {
         pressY = my;
         dragging = false;
         pressSlot = -1;
+        pressItem = -1;
         if (state.phase != GameState.Phase.PREP) return true;
+        int inv = invAt(mx, my);
+        if (inv >= 0) {
+            pressItem = inv;
+            return true;
+        }
         int s = slotAt(mx, my);
         if (s >= 0 && state.get(s) != null) {
             if (button == Input.Buttons.RIGHT) {
@@ -317,7 +340,7 @@ public final class GameView extends InputAdapter {
     @Override
     public boolean touchDragged(int screenX, int screenY, int pointer) {
         toGame(screenX, screenY);
-        if (pressSlot >= 0 && pressed && Vector2.dst(pressX, pressY, mx, my) > 6) dragging = true;
+        if ((pressSlot >= 0 || pressItem >= 0) && pressed && Vector2.dst(pressX, pressY, mx, my) > 6) dragging = true;
         return true;
     }
 
@@ -325,7 +348,11 @@ public final class GameView extends InputAdapter {
     public boolean touchUp(int screenX, int screenY, int pointer, int button) {
         toGame(screenX, screenY);
         if (!pressed) return true;
-        if (dragging && pressSlot >= 0) {
+        if (dragging && pressItem >= 0) {
+            int target = slotAt(mx, my);
+            if (target >= 0 && state.get(target) != null) state.equip(pressItem, target);
+            selected = -1;
+        } else if (dragging && pressSlot >= 0) {
             int target = slotAt(mx, my);
             if (target >= 0) state.move(pressSlot, target);
             else if (SHOP_AREA.contains(mx, my)) state.sell(pressSlot);
@@ -335,6 +362,7 @@ public final class GameView extends InputAdapter {
         }
         dragging = false;
         pressSlot = -1;
+        pressItem = -1;
         pressed = false;
         return true;
     }
@@ -345,8 +373,10 @@ public final class GameView extends InputAdapter {
                 if (BTN_A.contains(x, y)) {
                     state.reroll();
                 } else if (BTN_B.contains(x, y)) {
+                    state.buyXp();
+                } else if (BTN_LOCK.contains(x, y)) {
                     state.toggleLock();
-                } else if (BTN_C.contains(x, y)) {
+                } else if (BTN_SELL.contains(x, y)) {
                     if (selected >= 0) state.sell(selected);
                     selected = -1;
                 } else if (BTN_MAIN.contains(x, y)) {
@@ -406,6 +436,7 @@ public final class GameView extends InputAdapter {
         drawSynergies(g);
         drawInfo(g);
         drawBench(g);
+        drawInventory(g);
         drawShop(g);
         drawButtons(g);
         drawFloaters(g);
@@ -425,25 +456,37 @@ public final class GameView extends InputAdapter {
         g.rect(0, 0, W, 44, PANEL);
         g.text(bold(18), "Manche " + state.round, 16, 29, TEXT);
 
-        g.text(bold(13), "PV", 140, 28, MUTED);
-        g.round(164, 15, 150, 16, TRACK);
+        g.text(bold(13), "PV", 120, 28, MUTED);
+        g.round(142, 15, 120, 16, TRACK);
         float frac = state.hp / (float) GameState.START_HP;
-        g.round(164, 15, 150 * frac, 16, frac > 0.5f ? GOOD : frac > 0.25f ? GOLD : ACCENT);
-        g.centered(bold(12), state.hp + " / " + GameState.START_HP, 164 + 75, 28, WHITE);
+        g.round(142, 15, 120 * frac, 16, frac > 0.5f ? GOOD : frac > 0.25f ? GOLD : ACCENT);
+        g.centered(bold(12), state.hp + " / " + GameState.START_HP, 142 + 60, 28, WHITE);
 
-        g.text(bold(15), "● " + state.gold + " or", 335, 29, GOLD);
+        g.text(bold(15), "● " + state.gold + " or", 278, 29, GOLD);
+
+        g.text(bold(13), "Niv. " + state.level, 370, 28, TEXT);
+        g.round(420, 15, 100, 16, TRACK);
+        int need = state.xpToNext();
+        if (need > 0) {
+            g.round(420, 15, 100f * state.xp / need, 16, Canvas.rgb(0x7E6BE0));
+            g.centered(bold(12), "XP " + state.xp + " / " + need, 470, 28, WHITE);
+        } else {
+            g.round(420, 15, 100, 16, Canvas.rgb(0x7E6BE0));
+            g.centered(bold(12), "MAX", 470, 28, WHITE);
+        }
 
         int bc = state.boardCount();
-        g.text(regular(13), "Équipe " + bc + " / " + state.maxUnits(), 445, 29, bc > state.maxUnits() ? ACCENT : TEXT);
-        g.text(regular(13), "Victoires " + state.wins, 570, 29, TEXT);
+        g.text(regular(13), "Équipe " + bc + " / " + state.maxUnits(), 538, 29, bc > state.maxUnits() ? ACCENT : TEXT);
+        g.text(regular(13), "Victoires " + state.wins, 640, 29, TEXT);
         Battle b = state.battle;
         if (state.phase == GameState.Phase.COMBAT && b != null && b.overtimeMult() > 1) {
-            g.text(bold(13), "PROLONGATION · dégâts x" + fmt1(b.overtimeMult()), 680, 29, ACCENT);
+            g.right(bold(13), "PROLONGATION · dégâts x" + fmt1(b.overtimeMult()), W - 16, 29, ACCENT);
+        } else if (state.isPveRound() && state.phase == GameState.Phase.PREP) {
+            g.right(bold(13), "POKÉMON SAUVAGES · butin d'objets", W - 16, 29, GOLD);
         } else if (Math.abs(state.streak) >= 2) {
-            g.text(regular(13), (state.streak > 0 ? "Série de victoires x" : "Série de défaites x") + Math.abs(state.streak),
-                    680, 29, state.streak > 0 ? GOOD : ACCENT);
+            g.right(regular(13), (state.streak > 0 ? "Série de victoires x" : "Série de défaites x") + Math.abs(state.streak),
+                    W - 16, 29, state.streak > 0 ? GOOD : ACCENT);
         }
-        g.right(bold(13), "POKÉMON AUTO BATTLER", W - 16, 28, MUTED);
     }
 
     private void drawArena(Canvas g) {
@@ -458,7 +501,8 @@ public final class GameView extends InputAdapter {
                 g.hexOutline(cellX(c), cellY(c), HEX * 0.94f, GOLD);
             }
         }
-        g.text(bold(10), "ADVERSAIRE", ARENA.x + 6, ARENA.y + 12, g.fade(WHITE, 0.35f));
+        g.text(bold(10), state.isPveRound() ? "POKÉMON SAUVAGES" : "ADVERSAIRE", ARENA.x + 6, ARENA.y + 12,
+                state.isPveRound() ? g.fade(GOLD, 0.7f) : g.fade(WHITE, 0.35f));
         g.text(bold(10), "TON ÉQUIPE", ARENA.x + 6, ARENA.y + ARENA.h - 5, g.fade(WHITE, 0.35f));
 
         for (Area a : areas) {
@@ -506,6 +550,24 @@ public final class GameView extends InputAdapter {
         if (sel) g.hexOutline(cx, cy, HEX * 0.94f, GOLD);
         drawCreature(g, u.species, cx, cy - 2, 17, back);
         drawStars(g, u.stars, cx, cy - 21);
+        drawHeldItems(g, u, cx, cy + 19, 4.5f);
+    }
+
+    /** Petites pastilles des objets tenus, centrées sous le Pokémon. */
+    private void drawHeldItems(Canvas g, Unit u, float cx, float y, float r) {
+        int n = u.items.size();
+        for (int i = 0; i < n; i++) {
+            float x = cx + (i - (n - 1) / 2f) * (r * 2 + 2);
+            g.ellipse(x, y, r + 1, r + 1, BLACK);
+            g.ellipse(x, y, r, r, Canvas.rgb(u.items.get(i).rgb));
+        }
+    }
+
+    private void drawItemIcon(Canvas g, Item it, float cx, float cy, float r) {
+        if (!it.isComponent()) g.ellipse(cx, cy, r + 2.5f, r + 2.5f, GOLD);
+        g.ellipse(cx, cy, r, r, Canvas.rgb(it.rgb));
+        g.ellipse(cx, cy, r * 0.72f, r * 0.72f, g.fade(BLACK, 0.25f));
+        g.centered(bold(10), it.abbr, cx, cy + 4, WHITE);
     }
 
     private void drawFighter(Canvas g, Fighter f) {
@@ -535,6 +597,7 @@ public final class GameView extends InputAdapter {
         g.rect(bx + hpW, by, shW, 4, Canvas.rgb(0xDDE6F5));
         g.rect(bx, by + 5, (float) (bw * Math.min(1, f.mana / f.maxMana)), 2, BLUE);
         if (f.unit.stars > 1) drawStars(g, f.unit.stars, x, by - 3);
+        drawHeldItems(g, f.unit, x, y + 19, 3.5f);
 
         // pastilles de statut
         float sx = x + bw / 2 + 4, sy = by + 2;
@@ -641,7 +704,11 @@ public final class GameView extends InputAdapter {
         }
         if (unit != null) sp = unit.species;
 
-        if (sp == null) {
+        int hoverItem = prep ? invAt(mx, my) : -1;
+        if (dragging && pressItem >= 0) hoverItem = pressItem;
+        if (hoverItem >= 0 && hoverItem < state.items.size()) {
+            drawItemInfo(g, state.items.get(hoverItem), x, y);
+        } else if (sp == null) {
             g.text(bold(15), "Comment jouer", x, y, TEXT);
             String[] lines = {
                     "• Clique une carte de la boutique pour acheter.",
@@ -691,12 +758,52 @@ public final class GameView extends InputAdapter {
                     : "3 exemplaires → " + m.stars + "★";
             g.text(regular(13), evo, x, ty + 58, SOFT);
             if (owned && unit != null) g.right(regular(13), "Revente : " + unit.invested + " or", RIGHT.x + RIGHT.w - 16, ty + 58, GOLD);
+            if (unit != null && !unit.items.isEmpty()) {
+                float ix = x;
+                for (Item it : unit.items) {
+                    drawItemIcon(g, it, ix + 9, ty + 80, 9);
+                    g.text(regular(12), it.name, ix + 22, ty + 84, SOFT);
+                    ix += 26 + g.width(regular(12), it.name) + 10;
+                }
+            }
         }
 
         if (state.message != null && !state.message.isEmpty()) {
             g.round(RIGHT.x + 8, RIGHT.y + RIGHT.h - 40, RIGHT.w - 16, 32, PANEL_LIGHT);
             g.text(bold(13), state.message, RIGHT.x + 18, RIGHT.y + RIGHT.h - 19, GOLD);
         }
+    }
+
+    private void drawItemInfo(Canvas g, Item it, float x, float y) {
+        drawItemIcon(g, it, x + 14, y - 5, 14);
+        g.text(bold(22), it.name, x + 38, y, TEXT);
+        g.right(regular(12), it.isComponent() ? "Composant" : "Objet combiné", RIGHT.x + RIGHT.w - 16, y, MUTED);
+        g.text(bold(13), it.statsText(), x, y + 34, BLUE);
+        if (it.isComponent()) {
+            g.text(regular(13), "Glisse-le sur un Pokémon. Deux composants sur le même", x, y + 60, SOFT);
+            g.text(regular(13), "Pokémon se combinent en objet plus puissant :", x, y + 78, SOFT);
+            float ly = y + 104;
+            for (Item other : Item.COMPONENTS) {
+                Item c = Item.combine(it, other);
+                drawItemIcon(g, other, x + 9, ly - 4, 8);
+                g.text(regular(12), "→", x + 22, ly, MUTED);
+                drawItemIcon(g, c, x + 44, ly - 4, 8);
+                g.text(bold(12), c.name, x + 58, ly, TEXT);
+                g.text(regular(12), shorten(c.description, 33), x + 160, ly, SOFT);
+                ly += 22;
+            }
+        } else {
+            g.wrap(regular(13), it.description, x, y + 60, RIGHT.w - 32, 18, SOFT);
+            drawItemIcon(g, it.a, x + 9, y + 116, 9);
+            g.text(regular(13), it.a.name + "  +", x + 24, y + 120, MUTED);
+            float bx = x + 24 + g.width(regular(13), it.a.name + "  +") + 16;
+            drawItemIcon(g, it.b, bx, y + 116, 9);
+            g.text(regular(13), it.b.name, bx + 15, y + 120, MUTED);
+        }
+    }
+
+    private static String shorten(String s, int max) {
+        return s.length() <= max ? s : s.substring(0, max - 1) + "…";
     }
 
     private static String fmt2(double v) {
@@ -728,7 +835,19 @@ public final class GameView extends InputAdapter {
             if (selected == i) highlight(g, r, GOLD);
             drawCreature(g, u.species, r.cx(), r.cy() - 4, 22, false);
             drawStars(g, u.stars, r.cx(), r.y + 14);
+            drawHeldItems(g, u, r.cx(), r.y + r.h - 22, 4f);
             g.centered(bold(11), u.species.name, r.cx(), r.y + r.h - 6, TEXT);
+        }
+    }
+
+    private void drawInventory(Canvas g) {
+        g.text(bold(12), "OBJETS (" + state.items.size() + "/" + GameState.MAX_INVENTORY + ")", INV_X, INV_Y - 6, MUTED);
+        for (int i = 0; i < GameState.MAX_INVENTORY; i++) {
+            Rect r = invRect(i);
+            g.round(r.x, r.y, r.w, r.h, PANEL);
+            if (i >= state.items.size() || (dragging && pressItem == i)) continue;
+            if (r.contains(mx, my) && state.phase == GameState.Phase.PREP) g.outline(r.x, r.y, r.w, r.h, GOLD);
+            drawItemIcon(g, state.items.get(i), r.cx(), r.cy(), 12);
         }
     }
 
@@ -762,14 +881,17 @@ public final class GameView extends InputAdapter {
         switch (state.phase) {
             case PREP:
                 button(g, BTN_A, "Relancer  ● 1", state.gold >= 1, PANEL_LIGHT);
-                button(g, BTN_B, state.shopLocked ? "Déverrouiller" : "Verrouiller", true, state.shopLocked ? Canvas.rgb(0x5A4A20) : PANEL_LIGHT);
-                button(g, BTN_C, "Vendre", selected >= 0, PANEL_LIGHT);
+                button(g, BTN_B, "Acheter XP  ● " + GameState.XP_COST,
+                        state.gold >= GameState.XP_COST && state.level < GameState.MAX_LEVEL, Canvas.rgb(0x4A3F8C));
+                button(g, BTN_LOCK, state.shopLocked ? "Déverrouiller" : "Verrouiller", true, state.shopLocked ? Canvas.rgb(0x5A4A20) : PANEL_LIGHT);
+                button(g, BTN_SELL, "Vendre", selected >= 0, PANEL_LIGHT);
                 button(g, BTN_MAIN, "COMBAT !", state.boardCount() > 0, ACCENT);
                 break;
             case COMBAT:
                 button(g, BTN_A, "Vitesse x" + speed, true, PANEL_LIGHT);
                 button(g, BTN_B, "Passer", true, PANEL_LIGHT);
-                button(g, BTN_C, "En combat", false, PANEL_LIGHT);
+                button(g, BTN_LOCK, "En combat", false, PANEL_LIGHT);
+                button(g, BTN_SELL, state.isPveRound() ? "Butin à la clé" : "", false, PANEL_LIGHT);
                 button(g, BTN_MAIN, "…", false, ACCENT);
                 break;
             case RESULT:
@@ -795,7 +917,7 @@ public final class GameView extends InputAdapter {
     private void drawOverlay(Canvas g) {
         if (state.phase != GameState.Phase.RESULT && state.phase != GameState.Phase.GAMEOVER) return;
         Rect a = ARENA;
-        float bw = 300, bh = 120;
+        float bw = 300, bh = 140;
         float x = a.x + (a.w - bw) / 2, y = a.y + (a.h - bh) / 2;
         g.rect(a.x, a.y, a.w, a.h, g.fade(BLACK, 0.47f));
         g.round(x, y, bw, bh, PANEL);
@@ -803,11 +925,19 @@ public final class GameView extends InputAdapter {
         g.centered(bold(22), over ? "Partie terminée" : state.lastWin ? "Victoire !" : "Défaite", x + bw / 2, y + 42,
                 over ? ACCENT : state.lastWin ? GOOD : ACCENT);
         g.centered(regular(13), over ? "Manche " + state.round + " atteinte · " + state.wins + " victoires"
-                : state.lastWin ? "Tes Pokémon ont gagné la manche." : "Tu perds " + state.lastDamage + " PV.", x + bw / 2, y + 72, TEXT);
-        g.centered(regular(13), "Clique pour " + (over ? "rejouer" : "continuer"), x + bw / 2, y + 100, MUTED);
+                : state.lastWin ? "Tes Pokémon ont gagné la manche." : "Tu perds " + state.lastDamage + " PV.", x + bw / 2, y + 66, TEXT);
+        if (!over && !state.lastLoot.isEmpty()) {
+            int n = state.lastLoot.size();
+            for (int i = 0; i < n; i++) drawItemIcon(g, state.lastLoot.get(i), x + bw / 2 + (i - (n - 1) / 2f) * 30, y + 84, 10);
+        }
+        g.centered(regular(13), "Clique pour " + (over ? "rejouer" : "continuer"), x + bw / 2, y + 122, MUTED);
     }
 
     private void drawDragged(Canvas g) {
+        if (dragging && pressItem >= 0 && pressItem < state.items.size()) {
+            drawItemIcon(g, state.items.get(pressItem), mx, my, 12);
+            return;
+        }
         if (!dragging || pressSlot < 0) return;
         Unit u = state.get(pressSlot);
         if (u == null) return;

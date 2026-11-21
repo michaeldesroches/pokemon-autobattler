@@ -19,8 +19,11 @@ Auto battler façon TFT / Super Auto Pets avec des Pokémon de 1re génération,
 - **Statuts** : brûlure (dégâts dans le temps, soins réduits de moitié), poison, gel, sommeil (rompu par les dégâts), paralysie (attaque 40 % plus lente), hâte, provocation, bouclier.
 - **Prolongation** : après 30 s de combat, les dégâts augmentent de 20 % par seconde. Au bout de 45 s, le combat est perdu.
 - **3 exemplaires identiques fusionnent** : évolution (Bulbizarre → Herbizarre → Florizarre) ou étoile supplémentaire pour les formes finales (jusqu'à 3★).
-- La taille max de l'équipe augmente toutes les 2 manches (3 → 8).
-- **Économie** : +5 or par manche, +1 par tranche de 10 or (max +5), +1 en cas de victoire, +1 en série de 3+. Relancer la boutique coûte 1 or. Vendre rembourse ce que tu as investi.
+- **Niveau** (3 à 9) = nombre max de Pokémon sur le plateau. +2 XP par manche, ou achète 4 XP pour 4 or. Le niveau augmente aussi les chances de voir des Pokémon de tier 2 et 3 en boutique.
+- **Pool partagé** : chaque Pokémon de base existe en un nombre limité d'exemplaires (18 / 14 / 10 selon le tier). Ceux que tu achètes ne reviennent dans le pool qu'à la revente.
+- **Objets** : 6 composants (Bandeau Muscle, Lunettes Sages, Vive Griffe, Plaque Fer, Baie Oran, Encens Mer). Glisse-les sur un Pokémon (3 objets max) ; deux composants sur le même Pokémon se combinent en l'un des 21 objets (Orbe Vie, Griffe Rasoir, Casque Brut, Grelot Coque, Restes, Ceinture Force…). Survole un objet pour voir ses recettes.
+- **Pokémon sauvages** : les manches 2, 6, 10, 14… opposent des Pokémon sauvages ; elles rapportent des composants (2 à 3 en cas de victoire, 1 sinon) et coûtent moins de PV en cas de défaite.
+- **Économie** : +5 or par manche, +1 par tranche de 10 or (max +5), +1 en cas de victoire, +1 en série de 3+. Relancer la boutique coûte 1 or. Vendre rembourse ce que tu as investi (et rend ses objets).
 - **Défaite** : tu perds `manche + 2 × Pokémon adverses survivants` PV (60 PV au départ).
 - La **table des types** s'applique (les immunités sont adoucies à x0.25).
 

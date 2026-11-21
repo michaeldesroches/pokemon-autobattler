@@ -122,6 +122,13 @@ public final class Pokedex {
         ABILITY.put(line, ability);
     }
 
+    /** Forme de base (vendue en boutique) d'une lignée. */
+    public static Species base(String line) {
+        for (List<Species> tier : SHOP_BY_TIER)
+            for (Species s : tier) if (s.line.equals(line)) return s;
+        throw new IllegalArgumentException("Lignée inconnue : " + line);
+    }
+
     /** Portée d'attaque en cases (1 = corps à corps) de la lignée. */
     public static int range(String line) {
         return RANGE.get(line);

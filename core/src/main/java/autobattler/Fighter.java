@@ -20,6 +20,12 @@ public final class Fighter {
     public double maxHp, hp, atk, def, interval;
     public double maxMana, mana, manaMult = 1;
     public double dodge, lifesteal, regenPct, poisonPct, freezeChance;
+    // Objets
+    public double abilityPower = 1, damageAmp = 1, critChance, thorns, omnivamp, manaOnHit, abilityStack;
+    public double sitrus, manaRefund, stunChance, armorPen, healOnCast, shieldOnCast, hasteOnCast, startShield;
+    public boolean ccImmune, focusSash;
+    public int speedStacks;
+    public double speedStackValue;
     public boolean targetsWeakest;
 
     // Position : case actuelle (destination si en mouvement), case de départ du mouvement en cours
@@ -75,11 +81,49 @@ public final class Fighter {
                 default: break;
             }
         }
+        for (Item it : unit.items) applyItem(it);
+        atkSpeed += itemSpeed;
         mana = Math.min(mana, maxMana - 1);
         targetsWeakest = s.moveType() == PType.GHOST;
         interval = 1.8 * 100.0 / (s.spe + 60) / atkSpeed;
         hp = maxHp;
         cell = fromCell = Hex.fromLocal(player, row, col);
+    }
+
+    private double itemSpeed;
+
+    private void applyItem(Item it) {
+        atk *= 1 + it.atkPct;
+        abilityPower += it.abilityPct;
+        itemSpeed += it.speedPct;
+        def *= 1 + it.defPct;
+        maxHp += it.hp;
+        mana += it.mana;
+        double v = it.value;
+        switch (it.effect) {
+            case DAMAGE_AMP: damageAmp += v; break;
+            case CRIT: critChance += v; break;
+            case ATKSPEED_STACK: speedStackValue = Math.max(speedStackValue, v); break;
+            case THORNS: thorns += v; break;
+            case OMNIVAMP: omnivamp += v; break;
+            case MANA_ON_HIT: manaOnHit += v; break;
+            case ABILITY_AMP: abilityPower += v; break;
+            case ABILITY_STACK: abilityStack += v; break;
+            case SHIELD_START: startShield = Math.max(startShield, v); break;
+            case SITRUS: sitrus = Math.max(sitrus, v); break;
+            case MANA_REFUND: manaRefund += v; break;
+            case STUN_CHANCE: stunChance += v; break;
+            case ARMOR_PEN: armorPen = Math.min(0.8, armorPen + v); break;
+            case HEAL_ON_CAST: healOnCast += v; break;
+            case CC_IMMUNE: ccImmune = true; break;
+            case FOCUS_SASH: focusSash = true; break;
+            case SHIELD_ON_CAST: shieldOnCast += v; break;
+            case REGEN: regenPct += v; break;
+            case MANA_REDUCE: maxMana *= 1 - v; break;
+            case HASTE_ON_CAST: hasteOnCast = Math.max(hasteOnCast, v); break;
+            case ATTACK_SPEED: itemSpeed += v; break;
+            default: break;
+        }
     }
 
     public Species species() {
@@ -100,6 +144,6 @@ public final class Fighter {
         double m = 1;
         if (paraTime > 0) m *= 0.6;
         if (hasteTime > 0) m *= 1.6;
-        return m;
+        return m * (1 + speedStacks * speedStackValue);
     }
 }

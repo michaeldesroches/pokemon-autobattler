@@ -60,6 +60,10 @@ public final class Battle {
         for (Fighter f : fighters) {
             f.timer = f.interval * (0.3 + 0.5 * rng.nextDouble());
             occupied[f.cell] = true;
+            if (f.startShield > 0) {
+                f.shield = f.startShield * f.maxHp;
+                f.shieldTime = 6;
+            }
         }
         checkEnd();
     }
@@ -225,12 +229,24 @@ public final class Battle {
     // ================================================================== attaques et capacités
 
     private void basicAttack(Fighter f, Fighter t) {
-        f.mana = Math.min(f.maxMana, f.mana + 10 * f.manaMult);
+        f.mana = Math.min(f.maxMana, f.mana + (10 + f.manaOnHit) * f.manaMult);
+        if (f.speedStackValue > 0 && f.speedStacks < 10) f.speedStacks++;
         hit(f, t, 1.0, false);
+        if (f.stunChance > 0 && t.alive && rng.nextDouble() < f.stunChance) stun(t, 1, "Étourdi");
     }
 
     private void cast(Fighter f, Fighter t) {
         f.mana = 0;
+        castAbility(f, t);
+        // effets d'objets déclenchés par une capacité
+        f.abilityPower += f.abilityStack;
+        if (f.manaRefund > 0) f.mana = Math.min(f.maxMana - 1, f.manaRefund);
+        if (f.healOnCast > 0) heal(f, f.healOnCast * f.maxHp, true);
+        if (f.shieldOnCast > 0) addShield(f, f.shieldOnCast * f.maxHp, 3);
+        if (f.hasteOnCast > 0) f.hasteTime = Math.max(f.hasteTime, f.hasteOnCast);
+    }
+
+    private void castAbility(Fighter f, Fighter t) {
         Ability a = f.ability;
         PType mt = f.species().moveType();
         events.add(new Event(Kind.ABILITY, f, t, 0, 1, true, a.label, f.cell, 0, mt));
@@ -263,8 +279,7 @@ public final class Battle {
                 break;
             case PARA_SPORE:
                 hit(f, t, 1.2, true);
-                status(t, "Paralysé");
-                t.paraTime = Math.max(t.paraTime, 3);
+                paralyze(t, 3);
                 break;
             case RAPACE: {
                 Fighter weak = lowestHpEnemy(f);
@@ -291,7 +306,7 @@ public final class Battle {
                 break;
             case HYPNOSE:
                 hit(f, t, 1.2, true);
-                if (t.alive) {
+                if (t.alive && !t.ccImmune) {
                     t.sleep = Math.max(t.sleep, 2);
                     status(t, "Endormi");
                 }
@@ -302,7 +317,7 @@ public final class Battle {
             case EBOULEMENT:
                 for (Fighter o : enemiesWithin(f, f.cell, 1)) {
                     hit(f, o, 1.3, true);
-                    if (o.alive) o.stun = Math.max(o.stun, 1);
+                    if (o.alive) stun(o, 1, null);
                 }
                 events.add(new Event(Kind.AREA, f, t, 0, 1, true, null, f.cell, 1, PType.ROCK));
                 break;
@@ -321,10 +336,7 @@ public final class Battle {
                 }
                 for (Fighter o : hitList) {
                     hit(f, o, 1.6, true);
-                    if (o.alive && rng.nextDouble() < 0.3) {
-                        o.paraTime = Math.max(o.paraTime, 3);
-                        status(o, "Paralysé");
-                    }
+                    if (o.alive && rng.nextDouble() < 0.3) paralyze(o, 3);
                 }
                 break;
             }
@@ -342,10 +354,7 @@ public final class Battle {
                 break;
             case CAGE_ECLAIR:
                 hit(f, t, 1.0, true);
-                for (Fighter o : enemiesWithin(f, t.cell, 1)) {
-                    o.paraTime = Math.max(o.paraTime, 3);
-                    status(o, "Paralysé");
-                }
+                for (Fighter o : enemiesWithin(f, t.cell, 1)) paralyze(o, 3);
                 events.add(new Event(Kind.AREA, f, t, 0, 1, true, null, t.cell, 1, mt));
                 break;
             case LASER_GLACE:
@@ -401,11 +410,17 @@ public final class Battle {
             return 0;
         }
         double mult = PType.effectiveness(f.species().moveType(), t.species().types);
-        double dmg = DAMAGE_BASE * power * f.atk / t.def * mult * (0.9 + 0.2 * rng.nextDouble()) * overtimeMult();
-        events.add(new Event(Kind.ATTACK, f, t, dmg, mult, special, null, t.cell, 0, f.species().moveType()));
+        if (special) power *= f.abilityPower;
+        double def = t.def * (1 - f.armorPen);
+        double dmg = DAMAGE_BASE * power * f.atk / def * mult * (0.9 + 0.2 * rng.nextDouble()) * overtimeMult() * f.damageAmp;
+        boolean crit = f.critChance > 0 && rng.nextDouble() < f.critChance;
+        if (crit) dmg *= 1.6;
+        events.add(new Event(Kind.ATTACK, f, t, dmg, mult, special, crit ? "crit" : null, t.cell, 0, f.species().moveType()));
         double dealt = damage(f, t, dmg);
         t.mana = Math.min(t.maxMana, t.mana + 5 * t.manaMult);
         if (f.lifesteal > 0 && !special) heal(f, dealt * f.lifesteal, false);
+        if (f.omnivamp > 0) heal(f, dealt * f.omnivamp, false);
+        if (t.thorns > 0 && f.alive) damage(t, f, dmg * t.thorns);
         if (f.poisonPct > 0 && t.alive && !special) {
             t.poisonDps = Math.max(t.poisonDps, f.poisonPct * t.maxHp);
             t.poisonTime = Math.max(t.poisonTime, 3);
@@ -425,13 +440,24 @@ public final class Battle {
         if (t.sleep > 0 && dmg > 0) t.sleep = 0; // les dégâts réveillent
         double before = t.hp;
         t.hp -= dmg;
+        if (t.hp <= 0 && t.focusSash) {
+            t.focusSash = false;
+            t.hp = 1;
+            addShield(t, 0.25 * t.maxHp, 3);
+            status(t, "Ceinture Force");
+        }
+        if (t.hp > 0 && t.sitrus > 0 && t.hp < 0.5 * t.maxHp) {
+            double s = t.sitrus;
+            t.sitrus = 0;
+            heal(t, s * t.maxHp, true);
+        }
         if (t.hp <= 0) {
             t.hp = 0;
             t.alive = false;
             occupied[t.cell] = false;
             events.add(new Event(Kind.FAINT, src, t, 0, 1, false, null, t.cell, 0, null));
         }
-        return before - t.hp;
+        return Math.max(0, before - t.hp);
     }
 
     /** Soin (réduit de moitié par la brûlure). */
@@ -457,9 +483,19 @@ public final class Battle {
     }
 
     private void freeze(Fighter t, double duration) {
-        if (!t.alive) return;
+        stun(t, duration, "Gelé");
+    }
+
+    private void stun(Fighter t, double duration, String label) {
+        if (!t.alive || t.ccImmune) return;
         t.stun = Math.max(t.stun, duration);
-        status(t, "Gelé");
+        if (label != null) status(t, label);
+    }
+
+    private void paralyze(Fighter t, double duration) {
+        if (!t.alive || t.ccImmune) return;
+        t.paraTime = Math.max(t.paraTime, duration);
+        status(t, "Paralysé");
     }
 
     private void status(Fighter t, String text) {
