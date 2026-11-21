@@ -329,9 +329,9 @@ public final class GameView extends InputAdapter {
                 Color c = crit ? Canvas.rgb(0xFF5A36) : ev.mult > 1.01 ? ORANGE : ev.mult < 0.99 ? MUTED : WHITE;
                 String txt = Math.round(ev.amount) + (ev.mult > 1.01 || crit ? "!" : "");
                 float s = persp(Hex.row(ev.tgt.cell));
-                floaters.add(new Floater(fx(ev.tgt) + (fxRng.nextFloat() - 0.5f) * 16, fy(ev.tgt) - 58 * s, txt, c, ev.special || crit));
+                floaters.add(new Floater(fx(ev.tgt) + (fxRng.nextFloat() - 0.5f) * 16, fy(ev.tgt) - 86 * s, txt, c, ev.special || crit));
                 if (ev.src.range > 1 && !ev.special) projectiles.add(new Projectile(ev.src, ev.tgt, Canvas.rgb(ev.type.rgb)));
-                burst(fx(ev.tgt), fy(ev.tgt) - 20 * s, Canvas.rgb(ev.type.rgb), crit ? 9 : 5, crit ? 120 : 80);
+                burst(fx(ev.tgt), fy(ev.tgt) - 30 * s, Canvas.rgb(ev.type.rgb), crit ? 9 : 5, crit ? 120 : 80);
                 if (crit) {
                     shake = Math.max(shake, 3);
                     sounds.play("crit", 0.6f, 60);
@@ -342,7 +342,7 @@ public final class GameView extends InputAdapter {
             }
             case ABILITY:
                 if (shownAbility.add(ev.src)) {
-                    floaters.add(new Floater(fx(ev.src), fy(ev.src) - 72 * persp(Hex.row(ev.src.cell)), ev.text + " !", GOLD, true));
+                    floaters.add(new Floater(fx(ev.src), fy(ev.src) - 100 * persp(Hex.row(ev.src.cell)), ev.text + " !", GOLD, true));
                     sounds.play("ability", 0.6f, 80);
                     shake = Math.max(shake, 4);
                 }
@@ -359,7 +359,7 @@ public final class GameView extends InputAdapter {
                 break;
             }
             case HEAL:
-                floaters.add(new Floater(fx(ev.tgt), fy(ev.tgt) - 58 * persp(Hex.row(ev.tgt.cell)), "+" + Math.round(ev.amount), HEAL, false));
+                floaters.add(new Floater(fx(ev.tgt), fy(ev.tgt) - 86 * persp(Hex.row(ev.tgt.cell)), "+" + Math.round(ev.amount), HEAL, false));
                 burst(fx(ev.tgt), fy(ev.tgt) - 20, HEAL, 6, 50);
                 break;
             case DODGE:
@@ -730,7 +730,7 @@ public final class GameView extends InputAdapter {
             for (Fighter f : order) drawFighter(g, f);
             for (Projectile p : projectiles) {
                 float x = fx(p.src) + (fx(p.tgt) - fx(p.src)) * p.t;
-                float y = fy(p.src) - 24 + (fy(p.tgt) - fy(p.src)) * p.t;
+                float y = fy(p.src) - 32 + (fy(p.tgt) - fy(p.src)) * p.t;
                 g.ellipse(x, y, 8, 8, g.fade(p.color, 0.45f));
                 g.ellipse(x, y, 4, 4, WHITE);
             }
@@ -761,7 +761,7 @@ public final class GameView extends InputAdapter {
             if (mine && selected == slot) drawTile(g, cell, GOLD, true);
             float s = persp(Hex.row(cell));
             drawPokemon(g, u.species, cellX(cell), cellY(cell), s, mine ? 4 : 0, "Idle", clock + cell * 0.37f, true);
-            drawStars(g, u.stars, cellX(cell), cellY(cell) - 54 * s);
+            drawStars(g, u.stars, cellX(cell), cellY(cell) - 72 * s);
             drawHeldItems(g, u, cellX(cell), cellY(cell) + 12 * s, 4.5f);
         }
     }
@@ -784,12 +784,12 @@ public final class GameView extends InputAdapter {
         }
         if (f.tauntTime > 0) g.ellipse(x, y, 30 * s, 12 * s, g.fade(ACCENT, 0.35f));
         drawPokemon(g, f.species(), x, y, s, a.dir, a.name, a.t, !a.once);
-        if (f.stun > 0) g.ellipse(x, y - 22 * s, 26 * s, 26 * s, g.fade(Canvas.rgb(PType.ICE.rgb), 0.4f));
-        if (f.flash > 0) g.ellipse(x, y - 22 * s, 20 * s, 20 * s, g.fade(Canvas.rgb(0xFF5050), (float) (0.4 * f.flash)));
+        if (f.stun > 0) g.ellipse(x, y - 28 * s, 32 * s, 32 * s, g.fade(Canvas.rgb(PType.ICE.rgb), 0.4f));
+        if (f.flash > 0) g.ellipse(x, y - 28 * s, 26 * s, 26 * s, g.fade(Canvas.rgb(0xFF5050), (float) (0.35 * f.flash)));
         g.alpha = 1f;
         if (!f.alive) return;
 
-        float bw = 44 * s, bx = x - bw / 2, by = y - 62 * s;
+        float bw = 50 * s, bx = x - bw / 2, by = y - 78 * s;
         g.rect(bx - 1, by - 1, bw + 2, 10, TRACK);
         double total = Math.max(f.maxHp, f.hp + f.shield);
         float hpW = (float) (bw * f.hp / total), shW = (float) (bw * f.shield / total);
@@ -804,7 +804,7 @@ public final class GameView extends InputAdapter {
         if (f.poisonTime > 0) sy = statusDot(g, sx, sy, Canvas.rgb(PType.POISON.rgb));
         if (f.paraTime > 0) sy = statusDot(g, sx, sy, Canvas.rgb(PType.ELECTRIC.rgb));
         if (f.hasteTime > 0) statusDot(g, sx, sy, Canvas.rgb(0x5DFFB0));
-        if (f.sleep > 0) g.text(bold(13), "z", x + 12 * s, y - 40 * s - (clock % 1) * 6, Canvas.rgb(0xB7A6FF));
+        if (f.sleep > 0) g.text(bold(13), "z", x + 16 * s, y - 54 * s - (clock % 1) * 6, Canvas.rgb(0xB7A6FF));
     }
 
     private float statusDot(Canvas g, float x, float y, Color c) {
@@ -817,8 +817,9 @@ public final class GameView extends InputAdapter {
      * {@code persp} = facteur de perspective, {@code dir} = direction PMD.
      */
     private void drawPokemon(Canvas g, Species sp, float gx, float gy, float persp, int dir, String animName, float t, boolean loop) {
-        float scale = 2f * persp * Math.min(1f, 34f / Math.max(18f, pmd.idleHeight(sp.dex)) * 1.25f);
-        g.ellipse(gx, gy, 15 * persp, 5.5f * persp, g.fade(BLACK, 0.35f));
+        // ~60 px de haut à l'avant du plateau, entre x1,8 et x3 (pixel art)
+        float scale = persp * Math.max(1.8f, Math.min(3f, 60f / Math.max(16f, pmd.idleHeight(sp.dex))));
+        g.ellipse(gx, gy, 20 * persp, 7 * persp, g.fade(BLACK, 0.35f));
         PmdSprites.Anim a = pmd.anim(sp.dex, animName);
         if (a == null) {
             TextureRegion img = assets.sprite(sp.dex, dir >= 3 && dir <= 5);
@@ -1073,7 +1074,7 @@ public final class GameView extends InputAdapter {
             Unit u = state.bench[i];
             if (u == null || (dragging && pressSlot == i)) continue;
             if (selected == i) highlight(g, r, GOLD);
-            drawPokemon(g, u.species, r.cx(), r.y + r.h - 18, 0.95f, 0, "Idle", clock + i * 0.3f, true);
+            drawPokemon(g, u.species, r.cx(), r.y + r.h - 16, 0.85f, 0, "Idle", clock + i * 0.3f, true);
             drawStars(g, u.stars, r.cx(), r.y + 13);
             drawHeldItems(g, u, r.cx(), r.y + r.h - 9, 4f);
         }
@@ -1133,7 +1134,7 @@ public final class GameView extends InputAdapter {
             g.round(r.x, r.y, r.w, 60, g.fade(tierColor, 0.25f));
             g.outline(r.x, r.y, r.w, r.h, hover ? GOLD : tierColor);
             drawPortrait(g, sp, r.x + 10, r.y + 10, 48);
-            drawPokemon(g, sp, r.x + r.w - 36, r.y + 58, 0.85f, 1, "Idle", clock + i * 0.5f, true);
+            drawPokemon(g, sp, r.x + r.w - 36, r.y + 60, 0.7f, 1, "Idle", clock + i * 0.5f, true);
             g.text(bold(13), sp.name, r.x + 10, r.y + 80, TEXT);
             float tx = r.x + 10;
             for (PType t : sp.types) {
