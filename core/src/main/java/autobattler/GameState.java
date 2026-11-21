@@ -13,7 +13,7 @@ import java.util.Random;
  * Les emplacements sont codés en int : 0..7 = banc, 100 + ligne*4 + colonne = plateau.
  */
 public final class GameState {
-    public static final int BENCH = 8, ROWS = 2, COLS = 4, SHOP = 5;
+    public static final int BENCH = 8, ROWS = Hex.SIDE_ROWS, COLS = Hex.COLS, SHOP = 5;
     public static final int START_HP = 60;
 
     public enum Phase { PREP, COMBAT, RESULT, GAMEOVER }
@@ -332,19 +332,40 @@ public final class GameState {
             }
             units.add(u);
         }
-        // Les plus robustes devant
+        return arrange(units, rng);
+    }
+
+    /** Placement automatique : corps à corps en première ligne (les plus robustes au centre), distance derrière. */
+    public static List<Placed> arrange(List<Unit> units, Random rng) {
+        units = new ArrayList<Unit>(units);
         Collections.sort(units, new Comparator<Unit>() {
             @Override
             public int compare(Unit a, Unit b) {
                 return Double.compare(tankiness(b), tankiness(a));
             }
         });
-        int front = Math.min(4, (n + 1) / 2);
-        List<Integer> frontCols = shuffledCols(rng), backCols = shuffledCols(rng);
+        boolean[][] used = new boolean[ROWS][COLS];
         List<Placed> res = new ArrayList<Placed>();
-        for (int i = 0; i < units.size(); i++) {
-            if (i < front) res.add(new Placed(units.get(i), 0, frontCols.get(i)));
-            else res.add(new Placed(units.get(i), 1, backCols.get(i - front)));
+        int[] centerOrder = {3, 2, 4, 1, 5, 0, 6};
+        for (Unit u : units) {
+            int range = u.species.range();
+            int preferred = range <= 1 ? 0 : range == 2 ? 2 : 3;
+            boolean placed = false;
+            for (int dr = 0; dr < ROWS && !placed; dr++) {
+                int row = preferred + (preferred == 0 ? dr : -dr);
+                if (row < 0 || row >= ROWS) continue;
+                List<Integer> cols = new ArrayList<Integer>();
+                for (int c : centerOrder) cols.add(c);
+                if (range > 1) Collections.shuffle(cols, rng);
+                for (int c : cols) {
+                    if (!used[row][c]) {
+                        used[row][c] = true;
+                        res.add(new Placed(u, row, c));
+                        placed = true;
+                        break;
+                    }
+                }
+            }
         }
         return res;
     }
@@ -354,10 +375,4 @@ public final class GameState {
         return f.maxHp * f.def;
     }
 
-    private static List<Integer> shuffledCols(Random rng) {
-        List<Integer> l = new ArrayList<Integer>();
-        for (int c = 0; c < COLS; c++) l.add(c);
-        Collections.shuffle(l, rng);
-        return l;
-    }
 }

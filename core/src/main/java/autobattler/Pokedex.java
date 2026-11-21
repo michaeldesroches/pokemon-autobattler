@@ -12,6 +12,8 @@ import static autobattler.PType.*;
 public final class Pokedex {
     private static final Map<String, Species> ALL = new LinkedHashMap<String, Species>();
     private static final List<List<Species>> SHOP_BY_TIER = new ArrayList<List<Species>>();
+    private static final Map<String, Ability> ABILITY = new java.util.HashMap<String, Ability>();
+    private static final Map<String, Integer> RANGE = new java.util.HashMap<String, Integer>();
 
     static {
         // --- Tier 1 (coût 1) ---
@@ -74,6 +76,34 @@ public final class Pokedex {
         add("draco", "Draco", 148, 3, "mini", 61, 84, 65, 70, "dracolosse", DRAGON);
         add("dracolosse", "Dracolosse", 149, 3, "mini", 91, 134, 97, 80, null, DRAGON, FLYING);
 
+        // --- Kit de chaque lignée : portée d'attaque (en cases) et capacité unique ---
+        kit("bulbi", 2, Ability.GIGA_SANGSUE);
+        kit("sala", 2, Ability.LANCE_FLAMMES);
+        kit("cara", 1, Ability.REPLI);
+        kit("cheni", 2, Ability.PARA_SPORE);
+        kit("rouc", 1, Ability.RAPACE);
+        kit("ratt", 1, Ability.CROC_FATAL);
+        kit("myst", 3, Ability.POUDRE_TOXIK);
+        kit("ptit", 1, Ability.HYPNOSE);
+        kit("mach", 1, Ability.CLOSE_COMBAT);
+        kit("raca", 1, Ability.EBOULEMENT);
+        kit("pika", 3, Ability.TONNERRE);
+        kit("goup", 3, Ability.FEU_FOLLET);
+        kit("cani", 1, Ability.VITESSE_EXTREME);
+        kit("abra", 4, Ability.PSYKO);
+        kit("magn", 3, Ability.CAGE_ECLAIR);
+        kit("otar", 1, Ability.LASER_GLACE);
+        kit("fant", 2, Ability.BALL_OMBRE);
+        kit("onix", 1, Ability.PROVOC);
+        kit("osse", 1, Ability.OSMERANG);
+        kit("inse", 1, Ability.TRANCHE);
+        kit("lokh", 3, Ability.BLIZZARD);
+        kit("ronf", 1, Ability.REPOS);
+        kit("mini", 2, Ability.OURAGAN);
+        for (Species s : ALL.values()) {
+            if (!ABILITY.containsKey(s.line)) throw new IllegalStateException("Lignée sans kit : " + s.line);
+        }
+
         for (int i = 0; i < 3; i++) SHOP_BY_TIER.add(new ArrayList<Species>());
         List<String> evolved = new ArrayList<String>();
         for (Species s : ALL.values()) if (s.evolvesTo != null) evolved.add(s.evolvesTo);
@@ -85,6 +115,21 @@ public final class Pokedex {
     private static void add(String key, String name, int dex, int tier, String line,
                             int hp, int atk, int def, int spe, String evo, PType... types) {
         ALL.put(key, new Species(key, name, dex, tier, line, hp, atk, def, spe, evo, types));
+    }
+
+    private static void kit(String line, int range, Ability ability) {
+        RANGE.put(line, range);
+        ABILITY.put(line, ability);
+    }
+
+    /** Portée d'attaque en cases (1 = corps à corps) de la lignée. */
+    public static int range(String line) {
+        return RANGE.get(line);
+    }
+
+    /** Capacité unique de la lignée. */
+    public static Ability ability(String line) {
+        return ABILITY.get(line);
     }
 
     public static Species get(String key) {

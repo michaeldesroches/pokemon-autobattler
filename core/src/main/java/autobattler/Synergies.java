@@ -26,7 +26,7 @@ public final class Synergies {
         switch (t) {
             case NORMAL: return level >= 2 ? "+40% PV" : "+20% PV";
             case FIRE: return level >= 2 ? "+50% Attaque" : "+25% Attaque";
-            case WATER: return level >= 2 ? "+60% énergie gagnée" : "+30% énergie gagnée";
+            case WATER: return level >= 2 ? "+60% mana gagné" : "+30% mana gagné";
             case GRASS: return "Régénère 3% PV/s";
             case ELECTRIC: return "+30% vitesse d'attaque";
             case ICE: return "20% de geler la cible 1s";
@@ -34,7 +34,7 @@ public final class Synergies {
             case POISON: return level >= 2 ? "Poison : 4% PV/s (3s)" : "Poison : 2% PV/s (3s)";
             case GROUND: return level >= 2 ? "+40% PV" : "+20% PV";
             case FLYING: return level >= 2 ? "30% d'esquive" : "15% d'esquive";
-            case PSYCHIC: return "Commence avec 50 énergie";
+            case PSYCHIC: return "+30 mana au départ";
             case BUG: return "+30% vitesse d'attaque";
             case ROCK: return "+35% Défense";
             case GHOST: return "20% d'esquive, vise le plus faible";

@@ -28,11 +28,12 @@ for (let i = 0; i < 3; i++) {
   await page.mouse.click(75 + i * 124, 608);
   await page.waitForTimeout(300);
 }
-// Glisse les 3 premiers Pokémon du banc sur la première ligne du plateau
+// Glisse les 3 premiers Pokémon du banc sur la première ligne du plateau hexagonal (colonnes 2 à 4)
+const HEX_W = 28 * Math.sqrt(3);
 for (let i = 0; i < 3; i++) {
   await page.mouse.move(57 + i * 88, 473);
   await page.mouse.down();
-  await page.mouse.move(242 + i * 84, 282, { steps: 10 });
+  await page.mouse.move(200 + HEX_W / 2 + HEX_W * (2 + i), 58 + 28 + 42 * 4, { steps: 10 });
   await page.mouse.up();
   await page.waitForTimeout(300);
 }
@@ -47,7 +48,7 @@ await page.waitForTimeout(15000);
 await page.screenshot({ path: `${outDir}/4-resultat.png` });
 
 // Le canvas ne doit pas être uniforme (sinon rien ne s'affiche)
-const shot = await page.screenshot({ clip: { x: 200, y: 58, width: 340, height: 350 } });
+const shot = await page.screenshot({ clip: { x: 200, y: 58, width: 364, height: 350 } });
 await browser.close();
 
 if (shot.length < 8000) errors.push(`Capture du plateau suspecte (${shot.length} octets) : rien ne semble dessiné.`);

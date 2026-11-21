@@ -25,7 +25,7 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v5
 
-      - name: Compilation (core, desktop, web) et build TeaVM
+      - name: Compilation, tests et build TeaVM
         run: ./gradlew --no-daemon --stacktrace build :teavm:gdx_teavm_web_js_build
 
       - name: Simulation d'équilibrage

@@ -76,17 +76,14 @@ public final class Sim {
         });
         java.util.Arrays.fill(s.bench, null);
         for (Unit[] r : s.board) java.util.Arrays.fill(r, null);
-        int max = s.maxUnits(), placed = 0, benchI = 0;
+        int max = s.maxUnits(), benchI = 0;
+        List<Unit> team = new ArrayList<Unit>();
         for (Unit u : all) {
-            if (placed < max) {
-                s.board[placed < 4 ? 0 : 1][placed % 4] = u;
-                placed++;
-            } else if (benchI < GameState.BENCH) {
-                s.bench[benchI++] = u;
-            } else {
-                s.gold += u.invested;
-            }
+            if (team.size() < max) team.add(u);
+            else if (benchI < GameState.BENCH) s.bench[benchI++] = u;
+            else s.gold += u.invested;
         }
+        for (GameState.Placed p : GameState.arrange(team, new java.util.Random(s.round))) s.board[p.row][p.col] = p.unit;
     }
 
     static int countAll(GameState s) {

@@ -35,6 +35,24 @@ public final class Species {
         return false;
     }
 
+    /** Portée d'attaque en cases (1 = corps à corps). */
+    public int range() {
+        return Pokedex.range(line);
+    }
+
+    public Ability ability() {
+        return Pokedex.ability(line);
+    }
+
+    /** Stade d'évolution dans la lignée : 0 = forme de base. */
+    public int stage() {
+        int stage = 0;
+        for (Species s : Pokedex.all()) {
+            if (s.evolvesTo != null && s.evolvesTo.equals(key)) return s.stage() + 1;
+        }
+        return stage;
+    }
+
     public Species evolution() {
         return evolvesTo == null ? null : Pokedex.get(evolvesTo);
     }
