@@ -1,0 +1,58 @@
+// Usage : node smoke.mjs <url> <dossier-captures>
+// Échoue si la page lève une exception JavaScript ou si le canvas reste vide.
+import { chromium } from 'playwright';
+import { mkdirSync } from 'node:fs';
+
+const url = process.argv[2] ?? 'http://localhost:8000/';
+const outDir = process.argv[3] ?? 'screenshots';
+mkdirSync(outDir, { recursive: true });
+
+const browser = await chromium.launch({
+  args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'],
+});
+const page = await browser.newPage({ viewport: { width: 1000, height: 690 } });
+const errors = [];
+page.on('pageerror', (e) => errors.push(e.message));
+page.on('console', (m) => {
+  console.log(`[console.${m.type()}] ${m.text()}`);
+  if (m.type() === 'error' && !/favicon|Failed to load resource/i.test(m.text())) errors.push(m.text());
+});
+
+await page.goto(url);
+await page.waitForSelector('canvas', { timeout: 60000 });
+await page.waitForTimeout(12000); // préchargement des assets + démarrage
+await page.screenshot({ path: `${outDir}/1-demarrage.png` });
+
+// Achète les 3 premières cartes de la boutique (coordonnées du jeu : 1000x690, origine en haut à gauche)
+for (let i = 0; i < 3; i++) {
+  await page.mouse.click(75 + i * 124, 608);
+  await page.waitForTimeout(300);
+}
+// Glisse les 3 premiers Pokémon du banc sur la première ligne du plateau
+for (let i = 0; i < 3; i++) {
+  await page.mouse.move(57 + i * 88, 473);
+  await page.mouse.down();
+  await page.mouse.move(242 + i * 84, 282, { steps: 10 });
+  await page.mouse.up();
+  await page.waitForTimeout(300);
+}
+await page.mouse.move(57, 473); // survol : panneau d'info
+await page.waitForTimeout(300);
+await page.screenshot({ path: `${outDir}/2-equipe.png` });
+
+await page.mouse.click(904, 633); // COMBAT !
+await page.waitForTimeout(2500);
+await page.screenshot({ path: `${outDir}/3-combat.png` });
+await page.waitForTimeout(15000);
+await page.screenshot({ path: `${outDir}/4-resultat.png` });
+
+// Le canvas ne doit pas être uniforme (sinon rien ne s'affiche)
+const shot = await page.screenshot({ clip: { x: 200, y: 58, width: 340, height: 350 } });
+await browser.close();
+
+if (shot.length < 8000) errors.push(`Capture du plateau suspecte (${shot.length} octets) : rien ne semble dessiné.`);
+if (errors.length) {
+  console.error('Échec du test de fumée :\n- ' + errors.join('\n- '));
+  process.exit(1);
+}
+console.log('Test de fumée OK');

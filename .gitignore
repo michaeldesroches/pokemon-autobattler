@@ -1,4 +1,10 @@
 build/
+.gradle/
 *.class
 .idea/
 *.iml
+.vscode/
+local.properties
+tools/.cache/
+node_modules/
+screenshots/

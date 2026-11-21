@@ -1,12 +1,15 @@
 # Pokémon Auto Battler
 
-Petit auto battler façon TFT / Super Auto Pets avec des Pokémon de 1re génération, écrit en **Java** (Swing / Java2D) et jouable **dans le navigateur** grâce à [CheerpJ](https://cheerpj.com/), une JVM en WebAssembly.
+Auto battler façon TFT / Super Auto Pets avec des Pokémon de 1re génération, écrit en **Java** avec **[libGDX](https://libgdx.com/)**. Jouable sur desktop et **dans le navigateur** grâce à [gdx-teavm](https://github.com/xpenatan/gdx-teavm) (Java compilé en JavaScript par TeaVM).
 
-## Jouer
+**Jouer en ligne :** https://michaeldesroches.github.io/pokemon-autobattler/
 
-- **Navigateur** : active GitHub Pages (Settings → Pages → *Deploy from a branch* → `main` / `root`), puis ouvre `https://michaeldesroches.github.io/pokemon-autobattler/`.
-- **En local dans le navigateur** : `python3 -m http.server 8080`, puis http://localhost:8080 (il faut un serveur, `file://` ne marche pas).
-- **En desktop** : `java -jar autobattler.jar` (Java 8+).
+## Lancer le jeu
+
+```bash
+./gradlew :lwjgl3:run                    # desktop (Java 17+)
+./gradlew :teavm:gdx_teavm_web_js_run    # web, puis ouvrir http://localhost:8080
+```
 
 ## Règles
 
@@ -15,7 +18,7 @@ Petit auto battler façon TFT / Super Auto Pets avec des Pokémon de 1re génér
 - **3 exemplaires identiques fusionnent** : évolution (Bulbizarre → Herbizarre → Florizarre) ou étoile supplémentaire pour les formes finales (jusqu'à 3★).
 - La taille max de l'équipe augmente toutes les 2 manches (3 → 8).
 - **Économie** : +5 or par manche, +1 par tranche de 10 or (max +5), +1 en cas de victoire, +1 en série de 3+. Relancer la boutique coûte 1 or. Vendre rembourse ce que tu as investi.
-- **Défaite** : tu perds `manche + 2 × Pokémon adverses survivants` PV (60 PV au départ). La partie continue tant qu'il te reste des PV.
+- **Défaite** : tu perds `manche + 2 × Pokémon adverses survivants` PV (60 PV au départ).
 - **Énergie** : +20 par attaque, +6 quand on est touché. À 100, le Pokémon lance son attaque spéciale (x2.5 ; Séisme touche tout le monde ; Psy fait x3 ; Plante se soigne).
 - La **table des types** s'applique (les immunités sont adoucies à x0.25).
 
@@ -41,27 +44,14 @@ Petit auto battler façon TFT / Super Auto Pets avec des Pokémon de 1re génér
 
 ## Développement
 
-```bash
-./build.sh                                     # compile et produit autobattler.jar
-java -jar autobattler.jar                      # lance le jeu en desktop
-java -cp autobattler.jar autobattler.Sim 300   # un bot joue 300 parties (équilibrage)
-```
+Voir **[CLAUDE.md](CLAUDE.md)** (structure, commandes, conventions, CI) et **[docs/ROADMAP.md](docs/ROADMAP.md)** (feuille de route vers une version façon TFT).
 
-Les sprites viennent de [PokéAPI/sprites](https://github.com/PokeAPI/sprites) et sont embarqués dans le jar (`res/sprites/front` et `res/sprites/back`) : aucun appel réseau pendant le jeu.
+Chaque PR doit mettre à jour `CLAUDE.md` : c'est vérifié automatiquement par la CI.
 
-Le code cible Java 8 (`--release 8`) pour rester compatible avec tous les runtimes CheerpJ. Après une modification, relance `./build.sh` et commite le nouveau `autobattler.jar` : c'est lui que la page charge.
+## Crédits
 
-| Fichier | Rôle |
-|---|---|
-| `PType` | Types, table d'efficacité, noms des attaques spéciales |
-| `Pokedex`, `Species` | Les 54 espèces (stats simplifiées), lignées et tiers |
-| `Unit` | Un Pokémon possédé, fusion |
-| `Synergies` | Comptage et paliers des synergies de type |
-| `Fighter`, `Battle` | Moteur de combat déterministe (pas fixe de 50 ms) |
-| `GameState` | Économie, boutique, banc/plateau, génération des adversaires |
-| `Sprites` | Chargement des sprites embarqués (rognage des marges) |
-| `GamePanel`, `Main` | Rendu Java2D et interactions souris |
-| `Sim` | Bot de test pour l'équilibrage |
+- Sprites : [PokéAPI/sprites](https://github.com/PokeAPI/sprites).
+- Police : [Fira Sans](https://github.com/mozilla/Fira) (SIL Open Font License), avec DejaVu Sans pour quelques symboles.
 
 ---
 

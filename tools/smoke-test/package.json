@@ -1,0 +1,9 @@
+{
+  "name": "smoke-test",
+  "private": true,
+  "type": "module",
+  "description": "Test de fumée du build web : ouvre le jeu dans Chromium, joue une manche et prend des captures.",
+  "dependencies": {
+    "playwright": "^1.50.0"
+  }
+}
