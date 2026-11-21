@@ -40,6 +40,8 @@ public final class Sim {
     }
 
     static void playPrep(GameState s) {
+        // XP : garde au moins 10 or pour les intérêts
+        while (s.round >= 3 && s.level < GameState.MAX_LEVEL && s.gold >= GameState.XP_COST + 10) s.buyXp();
         // 1) acheter ce qui complète une fusion, puis le meilleur tier abordable
         boolean bought = true;
         while (bought) {
@@ -84,6 +86,23 @@ public final class Sim {
             else s.gold += u.invested;
         }
         for (GameState.Placed p : GameState.arrange(team, new java.util.Random(s.round))) s.board[p.row][p.col] = p.unit;
+        // objets : sur le Pokémon le plus fort qui peut les recevoir
+        for (int i = s.items.size() - 1; i >= 0; i--) {
+            for (int r = 0; r < GameState.ROWS; r++)
+                for (int c = 0; c < GameState.COLS; c++) {
+                    if (i >= s.items.size()) continue;
+                    Unit u = s.board[r][c];
+                    if (u != null && u == team.get(0) && u.canEquip(s.items.get(i))) s.equip(i, GameState.boardSlot(r, c));
+                }
+        }
+        for (int i = s.items.size() - 1; i >= 0; i--) {
+            boolean done = false;
+            for (int r = 0; r < GameState.ROWS && !done; r++)
+                for (int c = 0; c < GameState.COLS && !done; c++) {
+                    Unit u = s.board[r][c];
+                    if (u != null && i < s.items.size() && u.canEquip(s.items.get(i))) done = s.equip(i, GameState.boardSlot(r, c));
+                }
+        }
     }
 
     static int countAll(GameState s) {

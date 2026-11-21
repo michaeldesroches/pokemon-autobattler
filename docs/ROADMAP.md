@@ -10,8 +10,8 @@ Les estimations supposent un dev seul en soirées, environ 10 h par semaine.
 | --- | --- |
 | 0. Décision technique | ✅ Fait : libGDX 1.14 + TeaVM (gdx-teavm), desktop LWJGL3 |
 | 1. Moteur de combat façon TFT | ✅ Fait : hexagones, A*, portée, 23 capacités, statuts |
-| 2. Méta-jeu TFT | À faire (prochaine étape) |
-| 3. Visuel 3/4 | À faire |
+| 2. Méta-jeu TFT | ✅ Fait : niveau/XP, pool partagé, 6 composants → 21 objets, manches sauvages (classes et carrousel reportés) |
+| 3. Visuel 3/4 | À faire (prochaine étape possible) |
 | 4. Lobby à 8 joueurs | À faire |
 | 5. Contenu et équilibrage | En continu |
 
@@ -37,7 +37,11 @@ Plan initial :
 - Des effets de statut : brûlure, gel, paralysie, poison, provocation.
 - Le bot de simulation (`./gradlew :core:simulate`) reste utilisable pour vérifier qu'aucun combat ne bloque.
 
-## Étape 2 : méta-jeu TFT (2 à 3 semaines)
+## Étape 2 : méta-jeu TFT (2 à 3 semaines) — fait
+
+Ce qui a été livré : niveau 3 à 9 (XP achetée 4 or pour 4 XP, +2 XP par manche) qui fixe la taille de l'équipe et les chances de tier ; pool partagé (18 / 14 / 10 exemplaires par Pokémon de base selon le tier, rendus à la revente) ; 6 composants (Bandeau Muscle, Lunettes Sages, Vive Griffe, Plaque Fer, Baie Oran, Encens Mer) qui se combinent en 21 objets (Orbe Vie, Griffe Rasoir, Casque Brut, Restes, Ceinture Force…), 3 par Pokémon ; manches contre des Pokémon sauvages (2, 6, 10, 14…) qui donnent des composants. Reportés : les classes (Starter, etc.) et le carrousel.
+
+Plan initial :
 
 - Un niveau de joueur avec de l'XP à acheter. Le niveau fixe la taille de l'équipe et les chances d'obtenir chaque tier en boutique.
 - Un **pool partagé** : chaque Pokémon existe en nombre limité d'exemplaires pour tous les joueurs.
