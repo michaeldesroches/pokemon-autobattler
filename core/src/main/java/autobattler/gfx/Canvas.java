@@ -85,6 +85,19 @@ public final class Canvas {
         batch.draw(r, x, height - y - h, w, h);
     }
 
+    /** Image en miroir horizontal. */
+    public void imageFlipped(TextureRegion r, float x, float y, float w, float h) {
+        batch.setColor(1, 1, 1, alpha);
+        batch.draw(r, x + w, height - y - h, -w, h);
+    }
+
+    /** Image teintée (ex. silhouette pour l'aperçu de l'adversaire). */
+    public void imageTinted(TextureRegion r, float x, float y, float w, float h, Color c, boolean flip) {
+        use(c);
+        if (flip) batch.draw(r, x + w, height - y - h, -w, h);
+        else batch.draw(r, x, height - y - h, w, h);
+    }
+
     public float width(BitmapFont f, String s) {
         layout.setText(f, s);
         return layout.width;

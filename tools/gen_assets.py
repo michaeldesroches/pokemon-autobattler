@@ -20,6 +20,12 @@ ASSETS = os.path.join(ROOT, "assets")
 CACHE = os.path.join(ROOT, "tools", ".cache")
 POKEDEX = os.path.join(ROOT, "core", "src", "main", "java", "autobattler", "Pokedex.java")
 SPRITE_URL = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/{back}{dex}.png"
+PMD_URL = "https://raw.githubusercontent.com/PMDCollab/SpriteCollab/master/{kind}/{dex:04d}/{file}"
+# Animations PMD utilisées par le jeu ; directions gardées : 0 bas, 1 bas-droite, 2 droite, 3 haut-droite, 4 haut
+# (les directions gauches sont obtenues par symétrie à l'affichage).
+PMD_ANIMS = ["Idle", "Walk", "Attack", "Hurt", "Sleep"]
+PMD_DIRS = 5
+PMD_PAGE = 2048
 
 FONT_DIRS = ["/usr/share/fonts/truetype/google-fonts/ofl/firasans", "/usr/share/fonts/truetype/dejavu"]
 REGULAR = "FiraSans-Regular.ttf"
@@ -109,6 +115,156 @@ def gen_sprites():
     print("sprites :", len(images), "images, atlas", atlas.size)
 
 
+def fetch_pmd(kind, dex, file):
+    d = os.path.join(CACHE, "pmd", kind, "%04d" % dex)
+    os.makedirs(d, exist_ok=True)
+    path = os.path.join(d, file)
+    if not os.path.exists(path):
+        try:
+            urllib.request.urlretrieve(PMD_URL.format(kind=kind, dex=dex, file=file), path)
+        except Exception:
+            return None
+    return path
+
+
+def pmd_anims(dex):
+    """Lit AnimData.xml : {nom: (largeur, hauteur, [durées])} en résolvant les CopyOf."""
+    import xml.etree.ElementTree as ET
+    path = fetch_pmd("sprite", dex, "AnimData.xml")
+    if path is None:
+        return {}
+    root = ET.parse(path).getroot()
+    raw = {}
+    for a in root.iter("Anim"):
+        name = a.findtext("Name")
+        copy = a.findtext("CopyOf")
+        if copy:
+            raw[name] = ("copy", copy)
+        else:
+            durs = [int(d.text) for d in a.find("Durations").iter("Duration")]
+            raw[name] = (int(a.findtext("FrameWidth")), int(a.findtext("FrameHeight")), durs)
+    res = {}
+    for name in raw:
+        v, seen = raw[name], 0
+        src = name
+        while v[0] == "copy" and seen < 5:
+            src = v[1]
+            v = raw[src]
+            seen += 1
+        if v[0] != "copy":
+            res[name] = (src,) + v
+    return res
+
+
+def gen_pmd():
+    """Atlas des sprites animés PMDCollab (frames rognées) + portraits, avec index pmd.txt et crédits."""
+    frames = []      # (clé, Image)
+    lines = []       # lignes d'index sans les positions (complétées après empaquetage)
+    credits = {}
+    for dex in dex_numbers():
+        anims = pmd_anims(dex)
+        if not anims:
+            print("  pas de sprite PMD pour", dex)
+            continue
+        cpath = fetch_pmd("sprite", dex, "credits.txt")
+        if cpath:
+            for row in open(cpath, encoding="utf-8", errors="ignore"):
+                parts = row.split("\t")
+                if len(parts) > 1:
+                    credits.setdefault(parts[1].strip(), set()).add(dex)
+        for anim in PMD_ANIMS:
+            if anim not in anims:
+                continue
+            src, fw, fh, durs = anims[anim]
+            sheet_path = fetch_pmd("sprite", dex, src + "-Anim.png")
+            if sheet_path is None:
+                continue
+            sheet = Image.open(sheet_path).convert("RGBA")
+            n = sheet.width // fw
+            rows = sheet.height // fh
+            lines.append(("A", dex, anim, n, fw, fh, ",".join(str(d) for d in durs[:n])))
+            for d in range(min(PMD_DIRS, rows)):
+                for f in range(n):
+                    fr = sheet.crop((f * fw, d * fh, (f + 1) * fw, (d + 1) * fh))
+                    bbox = fr.getchannel("A").getbbox()
+                    if bbox is None:
+                        bbox = (0, 0, 1, 1)
+                    key = "F %d %s %d %d" % (dex, anim, d, f)
+                    frames.append((key, fr.crop(bbox), bbox[0] - fw // 2, bbox[1] - fh // 2))
+        ppath = fetch_pmd("portrait", dex, "Normal.png")
+        if ppath:
+            frames.append(("P %d" % dex, Image.open(ppath).convert("RGBA"), 0, 0))
+    # empaquetage sur plusieurs pages de 2048 de large
+    pad = 1
+    order = sorted(frames, key=lambda t: -t[1].height)
+    pages, pos = [], {}
+    x = y = shelf = 0
+    page = 0
+    for key, im, ox, oy in order:
+        if x + im.width + pad > PMD_PAGE:
+            x = 0
+            y += shelf + pad
+            shelf = 0
+        if y + im.height > PMD_PAGE:
+            page += 1
+            x = y = shelf = 0
+        pos[key] = (page, x, y)
+        x += im.width + pad
+        shelf = max(shelf, im.height)
+    heights = {}
+    for key, im, ox, oy in frames:
+        p, px, py = pos[key]
+        heights[p] = max(heights.get(p, 0), py + im.height)
+    for p in range(page + 1):
+        h = 1
+        while h < heights.get(p, 1):
+            h *= 2
+        pages.append(Image.new("RGBA", (PMD_PAGE, h), (0, 0, 0, 0)))
+    out = ["# Index des sprites PMDCollab (généré par tools/gen_assets.py)",
+           "# A dex anim nbFrames largeur hauteur durées(1/60 s)",
+           "# F dex anim direction frame page x y largeur hauteur décalageX décalageY (depuis le centre de la frame)",
+           "# P dex page x y largeur hauteur (portrait 40x40)"]
+    for l in lines:
+        out.append(" ".join(str(v) for v in l))
+    for key, im, ox, oy in frames:
+        p, px, py = pos[key]
+        pages[p].paste(im, (px, py))
+        if key.startswith("F"):
+            out.append("%s %d %d %d %d %d %d %d" % (key, p, px, py, im.width, im.height, ox, oy))
+        else:
+            out.append("%s %d %d %d %d %d" % (key, p, px, py, im.width, im.height))
+    for p, img in enumerate(pages):
+        img.save(os.path.join(ASSETS, "pmd%d.png" % p), optimize=True)
+    with open(os.path.join(ASSETS, "pmd.txt"), "w", encoding="utf-8") as f:
+        f.write("pages %d\n" % len(pages))
+        f.write("\n".join(out) + "\n")
+    # identifiants Discord -> noms (credit_names.txt du dépôt SpriteCollab)
+    names = {}
+    npath = os.path.join(CACHE, "pmd", "credit_names.txt")
+    if not os.path.exists(npath):
+        try:
+            urllib.request.urlretrieve("https://raw.githubusercontent.com/PMDCollab/SpriteCollab/master/credit_names.txt", npath)
+        except Exception:
+            npath = None
+    if npath:
+        for row in open(npath, encoding="utf-8", errors="ignore"):
+            parts = row.rstrip("\n").split("\t")
+            if len(parts) >= 2 and parts[0] != "Name":
+                names[parts[1].strip()] = parts[0].strip()
+    merged = {}
+    for author, dexes in credits.items():
+        merged.setdefault(names.get(author) or author, set()).update(dexes)
+    credits = merged
+    with open(os.path.join(ROOT, "CREDITS-PMD.md"), "w", encoding="utf-8") as f:
+        f.write("# Crédits des sprites et portraits (PMDCollab SpriteCollab)\n\n")
+        f.write("Sprites animés et portraits issus de [PMDCollab/SpriteCollab](https://github.com/PMDCollab/SpriteCollab), "
+                "sous licence [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/) : usage non commercial, crédit obligatoire.\n\n")
+        f.write("| Auteur | Pokémon (n° du Pokédex) |\n| --- | --- |\n")
+        for author in sorted(credits, key=lambda a: a.lower()):
+            f.write("| %s | %s |\n" % (author, ", ".join(str(d) for d in sorted(credits[author]))))
+    print("pmd :", len(frames), "images,", len(pages), "page(s)", [p.size for p in pages])
+
+
 def gen_ui():
     ui = os.path.join(ASSETS, "ui")
     os.makedirs(ui, exist_ok=True)
@@ -183,6 +339,7 @@ def gen_font(name, file, size):
 def main():
     os.makedirs(ASSETS, exist_ok=True)
     gen_sprites()
+    gen_pmd()
     gen_ui()
     for name, (file, size) in FONTS.items():
         gen_font(name, file, size)

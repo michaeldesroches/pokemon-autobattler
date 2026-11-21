@@ -1,0 +1,20 @@
+# Crédits des sprites et portraits (PMDCollab SpriteCollab)
+
+Sprites animés et portraits issus de [PMDCollab/SpriteCollab](https://github.com/PMDCollab/SpriteCollab), sous licence [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/) : usage non commercial, crédit obligatoire.
+
+| Auteur | Pokémon (n° du Pokédex) |
+| --- | --- |
+| <@!199989579682414592> | 5 |
+| baronessfaron | 38 |
+| bwappi | 5 |
+| CHUNSOFT | 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 16, 17, 18, 19, 20, 25, 26, 37, 38, 43, 44, 45, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 74, 75, 76, 81, 82, 86, 87, 92, 93, 94, 95, 104, 105, 123, 131, 143, 147, 148, 149 |
+| Deeshura | 149 |
+| Emboarger | 6, 66, 94 |
+| Emmuffin | 58, 63, 75, 76, 104 |
+| Grimlin | 5, 26 |
+| JFain | 16, 147 |
+| JustAGunk | 58 |
+| Sceptile | 104 |
+| SethY | 149 |
+| Some_Shinx | 104 |
+| Top_Kec | 26 |
