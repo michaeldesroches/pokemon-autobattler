@@ -34,6 +34,7 @@ Tant que les secrets ne sont pas configurés, ces deux jobs se terminent en succ
 | --- | --- | --- |
 | `No access to the specified resource` | `CLOUDFLARE_ACCOUNT_ID` ne correspond pas au compte du jeton (souvent un *Zone ID* copié à la place de l'*Account ID*), ou le jeton n'inclut pas ce compte dans « Account Resources » | Compare avec la sortie de l'étape « Diagnostic du jeton » (`wrangler whoami` liste les comptes accessibles et leurs identifiants), puis corrige le secret ou recrée le jeton |
 | `Authentication error` / `Invalid API Token` | Jeton expiré, révoqué ou mal copié | Recrée le jeton et remplace le secret |
+| `You cannot upload a new version of a Worker that does not yet exist` (aperçu de PR) | Aucun déploiement de production n'a encore réussi | Normal avant le premier déploiement : le job d'aperçu l'ignore |
 | `You need a workers.dev subdomain` | Sous-domaine `workers.dev` jamais choisi | Tableau de bord → *Workers & Pages* → choisir le sous-domaine |
 
 ## Domaine personnalisé (optionnel)

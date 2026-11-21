@@ -191,7 +191,13 @@ jobs:
           PR: ${{ github.event.pull_request.number }}
         run: |
           set -o pipefail
-          npx --yes wrangler@4 versions upload --preview-alias "pr-$PR" --message "PR #$PR ${GITHUB_SHA::7}" | tee upload.log
+          if ! npx --yes wrangler@4 versions upload --preview-alias "pr-$PR" --message "PR #$PR ${GITHUB_SHA::7}" 2>&1 | tee upload.log; then
+            if grep -q "does not yet exist" upload.log; then
+              echo "::notice title=Pas encore d'aperçu::Le Worker n'existe pas encore : il sera créé au premier déploiement de main."
+              exit 0
+            fi
+            exit 1
+          fi
           url=$(grep -oE "https://pr-$PR-[a-zA-Z0-9.-]+\.workers\.dev" upload.log | head -1)
           [ -z "$url" ] && url=$(grep -oE 'https://[a-zA-Z0-9.-]+\.workers\.dev' upload.log | head -1)
           echo "url=$url" >> "$GITHUB_OUTPUT"
