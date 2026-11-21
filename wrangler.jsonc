@@ -1,0 +1,17 @@
+{
+  // Déploiement du build web sur Cloudflare Workers (static assets, sans code de Worker).
+  // Le dossier est produit par : ./gradlew :teavm:gdx_teavm_web_js_build
+  // Déploiement : npx wrangler@4 deploy   (fait automatiquement par .github/workflows/build.yml sur main)
+  "$schema": "https://unpkg.com/wrangler@4/config-schema.json",
+  "name": "pokemon-autobattler",
+  "compatibility_date": "2026-11-21",
+  "assets": {
+    "directory": "./teavm/build/dist/js/webapp",
+    "not_found_handling": "404-page"
+  },
+  // URL publique en *.workers.dev et URL d'aperçu par version (utilisées pour les PR)
+  "workers_dev": true,
+  "preview_urls": true
+  // Domaine personnalisé (optionnel, le domaine doit être géré par Cloudflare) :
+  // "routes": [{ "pattern": "autobattler.example.com", "custom_domain": true }]
+}
