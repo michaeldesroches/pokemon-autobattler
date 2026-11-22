@@ -53,6 +53,8 @@ Plan initial :
 
 Chaque lignée a une classe de rôle (Gardien, Combattant, Assassin, Mystique, Tireur), et les 4 starters ont en plus la classe Starter. Les classes ont des paliers comme les types (2/4 ou 2/3) et un bonus lié au rôle : bouclier de départ, vol de vie, saut sur l'arrière-ligne avec critiques, puissance des capacités, vitesse d'attaque et portée. Objectif : lire une équipe d'un coup d'œil. Icône de classe sur chaque Pokémon (plateau, banc, boutique, combat), panneau de synergies classes + types, contour orange quand un Pokémon est mal placé, placement automatique des adversaires selon le rôle. Légendaire et Fossile attendront l'élargissement du Pokédex.
 
+Pour que chaque classe ait des représentants évidents, le Pokédex est sorti de la 1re génération : 8 lignées ajoutées (Galekid, Riolu, Griknot, Farfuret, Absol, Tarsal, Rémoraid, Brindibou, chacune avec sa capacité) et 3 évolutions apparues plus tard (Steelix, Cizayox, Magnézone), soit 31 lignées et 76 espèces. Nouveau type Ténèbres (palier 2 : coups critiques) ; l'Acier, devenu fréquent, passe aux paliers 2/3. Effet de bord : la boutique est plus diluée, les fusions arrivent plus tard (bot naïf : manche moyenne 9,9 au lieu de 10,2).
+
 ## Étape 3 : visuel 3/4 (2 à 3 semaines) — fait
 
 Ce qui a été livré : interface 16:9 (1280×720) façon TFT (boutique en cartes avec portraits, panneau niveau/or près de la boutique), plateau hexagonal en perspective, sprites animés PMDCollab (attente, marche, attaque, dégâts, sommeil) orientés vers leur cible, portraits, particules par type, tremblement d'écran sur les capacités, bruitages et musique synthétisés par script, bouton son. Reportés : portraits des autres joueurs et historique (avec le lobby de l'étape 4).

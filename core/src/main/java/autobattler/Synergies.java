@@ -15,9 +15,9 @@ public final class Synergies {
     /** Paliers (nombre de lignées distinctes) pour chaque type. */
     public static int[] thresholds(PType t) {
         switch (t) {
-            case NORMAL: case FIRE: case POISON: case GROUND: case FLYING: return new int[]{2, 3};
+            case NORMAL: case FIRE: case POISON: case GROUND: case FLYING: case STEEL: return new int[]{2, 3};
             case WATER: return new int[]{2, 4};
-            case PSYCHIC: case GHOST: case DRAGON: case STEEL: return new int[]{1};
+            case PSYCHIC: case GHOST: case DRAGON: return new int[]{1};
             default: return new int[]{2};
         }
     }
@@ -39,7 +39,8 @@ public final class Synergies {
             case ROCK: return "+35% Défense";
             case GHOST: return "20% d'esquive, vise le plus faible";
             case DRAGON: return "+25% PV et Attaque";
-            case STEEL: return "+30% Défense";
+            case STEEL: return level >= 2 ? "+50% Défense" : "+30% Défense";
+            case DARK: return "25% de coups critiques";
             default: return "";
         }
     }

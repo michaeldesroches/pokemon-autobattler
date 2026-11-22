@@ -86,7 +86,8 @@ public final class Fighter {
                 case ROCK: def *= 1.35; break;
                 case GHOST: dodge = Math.max(dodge, 0.20); break;
                 case DRAGON: maxHp *= 1.25; atk *= 1.25; break;
-                case STEEL: def *= 1.3; break;
+                case STEEL: def *= lvl >= 2 ? 1.5 : 1.3; break;
+                case DARK: critChance += 0.25; break;
                 default: break;
             }
         }

@@ -420,6 +420,50 @@ public final class Battle {
                 for (Fighter o : enemiesWithin(f, t.cell, 1)) hit(f, o, 2.0, true);
                 events.add(new Event(Kind.AREA, f, t, 0, 1, true, null, t.cell, 1, PType.DRAGON));
                 break;
+            case TETE_DE_FER:
+                hit(f, t, 1.6, true);
+                stun(t, 1.5, "Étourdi");
+                addShield(f, 0.20 * f.maxHp, 3);
+                break;
+            case VOEU: {
+                Fighter hurt = null;
+                for (Fighter o : fighters) {
+                    if (!o.alive || o.player != f.player) continue;
+                    if (hurt == null || o.hp / o.maxHp < hurt.hp / hurt.maxHp) hurt = o;
+                }
+                if (hurt != null) heal(hurt, 0.20 * hurt.maxHp, true);
+                hit(f, t, 1.5, true);
+                break;
+            }
+            case OCTAZOOKA:
+                hit(f, t, 2.0, true);
+                paralyze(t, 2);
+                break;
+            case TISSE_OMBRE:
+                hit(f, t, 2.3, true);
+                stun(t, 1.5, "Cloué");
+                break;
+            case AURASPHERE:
+                hit(f, t, 2.4, true);
+                heal(f, 0.15 * f.maxHp, true);
+                break;
+            case COUP_BAS:
+                hit(f, t, t.hp < 0.5 * t.maxHp ? 3.2 : 1.8, true);
+                break;
+            case TRANCHE_NUIT: {
+                double crit = f.critChance;
+                f.critChance = 1;
+                for (Fighter o : enemiesWithin(f, t.cell, 1)) {
+                    if (Hex.distance(f.cell, o.cell) <= 2) hit(f, o, 2.0, true);
+                }
+                f.critChance = crit;
+                events.add(new Event(Kind.AREA, f, t, 0, 1, true, null, t.cell, 1, PType.DARK));
+                break;
+            }
+            case SEISME:
+                for (Fighter o : enemiesWithin(f, f.cell, 2)) hit(f, o, 1.5, true);
+                events.add(new Event(Kind.AREA, f, t, 0, 1, true, null, f.cell, 2, PType.GROUND));
+                break;
             default:
                 hit(f, t, 2.5, true);
                 break;

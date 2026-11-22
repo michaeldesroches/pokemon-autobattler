@@ -16,7 +16,7 @@ public final class Pokedex {
     private static final Map<String, Integer> RANGE = new java.util.HashMap<String, Integer>();
     private static final Map<String, Trait> ROLE = new java.util.HashMap<String, Trait>();
     private static final java.util.Set<String> STARTERS = new java.util.HashSet<String>(
-            java.util.Arrays.asList("bulbi", "sala", "cara", "pika"));
+            java.util.Arrays.asList("bulbi", "sala", "cara", "pika", "brin"));
 
     static {
         // --- Tier 1 (coût 1) ---
@@ -49,6 +49,18 @@ public final class Pokedex {
         add("racaillou", "Racaillou", 74, 1, "raca", 40, 80, 65, 20, "gravalanch", ROCK, GROUND);
         add("gravalanch", "Gravalanch", 75, 1, "raca", 55, 95, 80, 35, "grolem", ROCK, GROUND);
         add("grolem", "Grolem", 76, 1, "raca", 80, 120, 95, 45, null, ROCK, GROUND);
+        // générations suivantes (choisies pour leur rôle)
+        add("galekid", "Galekid", 304, 1, "gale", 50, 70, 70, 30, "galegon", STEEL, ROCK);
+        add("galegon", "Galegon", 305, 1, "gale", 60, 90, 95, 40, "galeking", STEEL, ROCK);
+        add("galeking", "Galeking", 306, 1, "gale", 70, 110, 120, 50, null, STEEL, ROCK);
+        add("tarsal", "Tarsal", 280, 1, "tars", 28, 45, 30, 40, "kirlia", PSYCHIC);
+        add("kirlia", "Kirlia", 281, 1, "tars", 38, 65, 45, 50, "gardevoir", PSYCHIC);
+        add("gardevoir", "Gardevoir", 282, 1, "tars", 68, 110, 85, 80, null, PSYCHIC);
+        add("remoraid", "Rémoraid", 223, 1, "remo", 35, 65, 35, 65, "octillery", WATER);
+        add("octillery", "Octillery", 224, 1, "remo", 75, 105, 75, 45, null, WATER);
+        add("brindibou", "Brindibou", 722, 1, "brin", 68, 55, 52, 42, "effleche", GRASS, FLYING);
+        add("effleche", "Efflèche", 723, 1, "brin", 78, 75, 72, 52, "archeduc", GRASS, FLYING);
+        add("archeduc", "Archéduc", 724, 1, "brin", 78, 107, 87, 70, null, GRASS, GHOST);
 
         // --- Tier 2 (coût 2) ---
         add("pikachu", "Pikachu", 25, 2, "pika", 35, 55, 45, 90, "raichu", ELECTRIC);
@@ -61,23 +73,34 @@ public final class Pokedex {
         add("kadabra", "Kadabra", 64, 2, "abra", 40, 120, 55, 105, "alakazam", PSYCHIC);
         add("alakazam", "Alakazam", 65, 2, "abra", 55, 135, 75, 120, null, PSYCHIC);
         add("magneti", "Magnéti", 81, 2, "magn", 25, 95, 63, 45, "magneton", ELECTRIC, STEEL);
-        add("magneton", "Magnéton", 82, 2, "magn", 50, 120, 83, 70, null, ELECTRIC, STEEL);
+        add("magneton", "Magnéton", 82, 2, "magn", 50, 120, 83, 70, "magnezone", ELECTRIC, STEEL);
+        add("magnezone", "Magnézone", 462, 2, "magn", 70, 130, 102, 60, null, ELECTRIC, STEEL);
         add("otaria", "Otaria", 86, 2, "otar", 65, 45, 62, 45, "lamantine", WATER);
         add("lamantine", "Lamantine", 87, 2, "otar", 90, 70, 90, 70, null, WATER, ICE);
         add("fantominus", "Fantominus", 92, 2, "fant", 30, 100, 35, 80, "spectrum", GHOST, POISON);
         add("spectrum", "Spectrum", 93, 2, "fant", 45, 115, 50, 95, "ectoplasma", GHOST, POISON);
         add("ectoplasma", "Ectoplasma", 94, 2, "fant", 60, 130, 68, 110, null, GHOST, POISON);
-        add("onix", "Onix", 95, 2, "onix", 35, 45, 102, 70, null, ROCK, GROUND);
+        add("onix", "Onix", 95, 2, "onix", 35, 45, 102, 70, "steelix", ROCK, GROUND);
+        add("steelix", "Steelix", 208, 2, "onix", 75, 85, 132, 30, null, STEEL, GROUND);
         add("osselait", "Osselait", 104, 2, "osse", 50, 50, 75, 35, "ossatueur", GROUND);
         add("ossatueur", "Ossatueur", 105, 2, "osse", 60, 80, 90, 45, null, GROUND);
+        add("riolu", "Riolu", 447, 2, "riol", 40, 70, 40, 60, "lucario", FIGHTING);
+        add("lucario", "Lucario", 448, 2, "riol", 70, 115, 70, 90, null, FIGHTING, STEEL);
+        add("farfuret", "Farfuret", 215, 2, "farf", 55, 95, 65, 115, "dimoret", DARK, ICE);
+        add("dimoret", "Dimoret", 461, 2, "farf", 70, 120, 75, 125, null, DARK, ICE);
+        add("absol", "Absol", 359, 2, "absol", 65, 130, 60, 75, null, DARK);
 
         // --- Tier 3 (coût 3) ---
-        add("insecateur", "Insécateur", 123, 3, "inse", 70, 110, 80, 105, null, BUG, FLYING);
+        add("insecateur", "Insécateur", 123, 3, "inse", 70, 110, 80, 105, "cizayox", BUG, FLYING);
+        add("cizayox", "Cizayox", 212, 3, "inse", 70, 130, 90, 65, null, BUG, STEEL);
         add("lokhlass", "Lokhlass", 131, 3, "lokh", 130, 85, 85, 60, null, WATER, ICE);
         add("ronflex", "Ronflex", 143, 3, "ronf", 160, 110, 88, 30, null, NORMAL);
         add("minidraco", "Minidraco", 147, 3, "mini", 41, 64, 50, 50, "draco", DRAGON);
         add("draco", "Draco", 148, 3, "mini", 61, 84, 65, 70, "dracolosse", DRAGON);
         add("dracolosse", "Dracolosse", 149, 3, "mini", 91, 134, 97, 80, null, DRAGON, FLYING);
+        add("griknot", "Griknot", 443, 3, "grik", 58, 70, 45, 42, "carmache", DRAGON, GROUND);
+        add("carmache", "Carmache", 444, 3, "grik", 68, 90, 60, 82, "carchacrok", DRAGON, GROUND);
+        add("carchacrok", "Carchacrok", 445, 3, "grik", 108, 130, 90, 102, null, DRAGON, GROUND);
 
         // --- Kit de chaque lignée : portée d'attaque (en cases) et capacité unique ---
         kit("bulbi", 2, Ability.GIGA_SANGSUE);
@@ -103,12 +126,20 @@ public final class Pokedex {
         kit("lokh", 3, Ability.BLIZZARD);
         kit("ronf", 1, Ability.REPOS);
         kit("mini", 2, Ability.OURAGAN);
+        kit("gale", 1, Ability.TETE_DE_FER);
+        kit("tars", 3, Ability.VOEU);
+        kit("remo", 3, Ability.OCTAZOOKA);
+        kit("brin", 4, Ability.TISSE_OMBRE);
+        kit("riol", 1, Ability.AURASPHERE);
+        kit("farf", 1, Ability.COUP_BAS);
+        kit("absol", 1, Ability.TRANCHE_NUIT);
+        kit("grik", 1, Ability.SEISME);
         // --- Classe (rôle) de chaque lignée ---
-        role(Trait.GUARDIAN, "cara", "raca", "onix", "ronf", "otar");
-        role(Trait.FIGHTER, "mach", "osse", "cani", "ptit", "mini");
-        role(Trait.ASSASSIN, "fant", "rouc", "ratt", "inse");
-        role(Trait.MYSTIC, "abra", "magn", "lokh", "myst", "goup");
-        role(Trait.MARKSMAN, "pika", "sala", "cheni", "bulbi");
+        role(Trait.GUARDIAN, "cara", "raca", "onix", "ronf", "otar", "gale");
+        role(Trait.FIGHTER, "mach", "osse", "cani", "mini", "riol", "grik");
+        role(Trait.ASSASSIN, "fant", "rouc", "ratt", "inse", "farf", "absol");
+        role(Trait.MYSTIC, "abra", "magn", "lokh", "myst", "goup", "ptit", "tars");
+        role(Trait.MARKSMAN, "pika", "sala", "cheni", "bulbi", "remo", "brin");
         for (Species s : ALL.values()) {
             if (!ABILITY.containsKey(s.line)) throw new IllegalStateException("Lignée sans kit : " + s.line);
             if (!ROLE.containsKey(s.line)) throw new IllegalStateException("Lignée sans classe : " + s.line);
@@ -136,7 +167,7 @@ public final class Pokedex {
         return ROLE.get(line);
     }
 
-    /** Vrai si la lignée est un Pokémon de départ (Bulbizarre, Salamèche, Carapuce, Pikachu). */
+    /** Vrai si la lignée est un Pokémon de départ (Bulbizarre, Salamèche, Carapuce, Pikachu, Brindibou). */
     public static boolean isStarter(String line) {
         return STARTERS.contains(line);
     }
