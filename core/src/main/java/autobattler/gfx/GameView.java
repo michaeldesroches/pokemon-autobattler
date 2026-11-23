@@ -1156,7 +1156,7 @@ public final class GameView extends InputAdapter {
         for (Trait t : traits) if (!tLevels.containsKey(t)) pending.add(t);
         for (PType t : types) if (!levels.containsKey(t)) pending.add(t);
         if (!pending.isEmpty() && y <= bottom - 30) {
-            y += 4;
+            y += y > LEFT.y + 40 ? 14 : 4;
             g.text(bold(10), "À COMPLÉTER", LEFT.x + 12, y, MUTED);
             y += 6;
             float cx = LEFT.x + 10, right = LEFT.x + LEFT.w - 8;
