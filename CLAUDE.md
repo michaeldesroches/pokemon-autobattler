@@ -20,6 +20,7 @@ Objectif long terme : une version façon TFT (grille hexagonale, déplacements, 
 - Remplacements (PR #10) : les lignées 1G qui collaient mal à leur classe sont remplacées en gardant leurs types — Otaria → Obalie/Phogleck/Kaimorse (Gardien), Roucool → Étourmi/Étourvol/Étouraptor (Assassin), Chenipan → Larvibule/Chrysapile/Lucanon (Tireur, capacité Para-Spore renommée Élecanon) ; Ptitard passe Combattant. Toujours 31 lignées.
 - Étape 4, niveau 1 fait (PR #11) : lobby de 8 joueurs, le joueur contre 7 bots (champions d'arène de Kanto, chacun avec une classe et un type préférés), pool partagé, appariements JcJ (pas deux fois de suite le même adversaire, fantôme si nombre impair), combats entre bots simulés sans affichage, éliminations et classement final ; panneau de droite = classement (portrait du meilleur Pokémon, PV, niveau, série, adversaire du tour).
 - Icônes d'objets (PR #12) : les 27 objets utilisent le sprite de l'objet Pokémon du même nom (PokéAPI), sur une pastille de leur couleur (anneau doré pour les objets combinés), dans l'inventaire, les infobulles, le butin et sous les Pokémon.
+- Infos d'objets lisibles (PR #13) : les recettes d'un composant et les objets tenus affichent leur description complète au lieu d'un texte tronqué ; descriptions d'objets écrites pour tenir sur une ligne de 288 px en `regular12` (fiche d'un Pokémon) — à respecter pour un nouvel objet.
 - Reporté : carrousel, consultation du plateau des autres joueurs. Prochaine étape : étape 4 niveau 2 (asynchrone) — voir `docs/ROADMAP.md`.
 
 ## Structure

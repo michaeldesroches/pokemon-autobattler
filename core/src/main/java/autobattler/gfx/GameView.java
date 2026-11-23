@@ -1272,11 +1272,13 @@ public final class GameView extends InputAdapter {
 
             if (owned) g.right(regular(13), "Revente : " + unit.invested + " or", RIGHT.x + RIGHT.w - 14, ty + 60, GOLD);
             if (unit != null && !unit.items.isEmpty()) {
-                float iy = ty + 98;
+                // nom puis description complète (toutes tiennent sur une ligne de 288 px)
+                float iy = ty + 94;
                 for (Item it : unit.items) {
-                    drawItemIcon(g, it, x + 9, iy - 4, 9);
-                    g.text(regular(12), it.name + " — " + shorten(it.description, 34), x + 24, iy, SOFT);
-                    iy += 20;
+                    drawItemIcon(g, it, x + 9, iy + 2, 9);
+                    g.text(bold(12), it.name, x + 24, iy, TEXT);
+                    g.text(regular(12), it.isComponent() ? it.statsText() : it.description, x + 24, iy + 13, SOFT);
+                    iy += 27;
                 }
             }
         }
@@ -1293,17 +1295,16 @@ public final class GameView extends InputAdapter {
         g.text(regular(12), it.isComponent() ? "Composant" : "Objet combiné", x + 42, y + 40, MUTED);
         g.text(bold(13), it.statsText(), x, y + 64, BLUE);
         if (it.isComponent()) {
-            g.text(regular(13), "Deux composants sur le même Pokémon", x, y + 88, SOFT);
-            g.text(regular(13), "se combinent :", x, y + 106, SOFT);
-            float ly = y + 132;
+            // recettes avec leur description complète (2 lignes au plus, vérifié sur la police)
+            g.text(bold(11), "AVEC UN 2E COMPOSANT SUR LE MÊME POKÉMON :", x, y + 84, MUTED);
+            float ly = y + 104, tw = RIGHT.x + RIGHT.w - 12 - (x + 58);
             for (Item other : Item.COMPONENTS) {
                 Item c = Item.combine(it, other);
                 drawItemIcon(g, other, x + 9, ly - 4, 8);
                 g.text(regular(12), "→", x + 22, ly, MUTED);
                 drawItemIcon(g, c, x + 44, ly - 4, 8);
                 g.text(bold(12), c.name, x + 58, ly, TEXT);
-                g.text(regular(12), shorten(c.description, 30), x + 58, ly + 13, SOFT);
-                ly += 32;
+                ly = g.wrap(regular(12), c.description, x + 58, ly + 13, tw, 12, SOFT) + 7;
             }
         } else {
             g.wrap(regular(13), it.description, x, y + 90, RIGHT.w - 28, 18, SOFT);
@@ -1313,10 +1314,6 @@ public final class GameView extends InputAdapter {
             drawItemIcon(g, it.b, bx, y + 146, 9);
             g.text(regular(13), it.b.name, bx + 15, y + 150, MUTED);
         }
-    }
-
-    private static String shorten(String s, int max) {
-        return s.length() <= max ? s : s.substring(0, max - 1) + "…";
     }
 
     private static String fmt2(double v) {
