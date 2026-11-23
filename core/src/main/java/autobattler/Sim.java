@@ -1,16 +1,15 @@
 package autobattler;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-
 /**
  * Outil d'équilibrage sans interface : un bot simple joue des parties complètes.
  * Usage : java -cp autobattler.jar autobattler.Sim [nbParties]
  */
 public final class Sim {
     public static void main(String[] args) {
+        if (args.length > 0 && args[0].equals("lobby")) {
+            lobby(args.length > 1 ? Integer.parseInt(args[1]) : 200);
+            return;
+        }
         int games = args.length > 0 ? Integer.parseInt(args[0]) : 300;
         int totalRounds = 0, maxRound = 0;
         int[] reached = new int[40];
@@ -34,80 +33,35 @@ public final class Sim {
         System.out.println(sb);
     }
 
-    static double power(Unit u) {
-        Fighter f = new Fighter(u, true, 0, 0, null);
-        return f.maxHp * f.atk / f.interval;
+    /** Lobbys de 8 où le joueur 0 est le bot naïf : classement moyen et durée des parties. */
+    static void lobby(int games) {
+        int placementSum = 0, endRoundSum = 0, wins = 0, top4 = 0;
+        int[] byPlace = new int[Lobby.SIZE + 1];
+        for (int g = 0; g < games; g++) {
+            Lobby l = new Lobby(g * 104729L + 3, Bot.naive());
+            GameState h = l.human();
+            while (h.phase != GameState.Phase.GAMEOVER && h.round < 60) {
+                if (!h.startCombat()) break;
+                h.battle.runToEnd();
+                h.finishCombat();
+                if (h.phase == GameState.Phase.RESULT) h.nextRound();
+            }
+            placementSum += h.placement;
+            byPlace[h.placement]++;
+            endRoundSum += h.round;
+            if (h.placement == 1) wins++;
+            if (h.placement <= 4) top4++;
+        }
+        System.out.printf("Lobbys : %d, classement moyen du bot naïf : %.2f, victoires %d%%, top 4 %d%%, fin à la manche %.1f%n",
+                games, placementSum / (double) games, wins * 100 / games, top4 * 100 / games, endRoundSum / (double) games);
+        StringBuilder sb = new StringBuilder("Classements : ");
+        for (int p = 1; p <= Lobby.SIZE; p++) sb.append(Lobby.ordinal(p)).append('=').append(byPlace[p]).append(' ');
+        System.out.println(sb);
     }
 
     static void playPrep(GameState s) {
-        // XP : garde au moins 10 or pour les intérêts
-        while (s.round >= 3 && s.level < GameState.MAX_LEVEL && s.gold >= GameState.XP_COST + 10) s.buyXp();
-        // 1) acheter ce qui complète une fusion, puis le meilleur tier abordable
-        boolean bought = true;
-        while (bought) {
-            bought = false;
-            int best = -1;
-            double bestScore = -1;
-            for (int i = 0; i < GameState.SHOP; i++) {
-                Species sp = s.shop[i];
-                if (sp == null || sp.tier > s.gold) continue;
-                int owned = 0;
-                for (int slot = 0; slot < GameState.BENCH; slot++) if (s.bench[slot] != null && s.bench[slot].species == sp) owned++;
-                for (Unit u : s.boardUnits()) if (u.species == sp) owned++;
-                double score = sp.tier + owned * 3;
-                int total = owned + countAll(s);
-                if (owned == 0 && countAll(s) >= s.maxUnits() + 3) continue;
-                if (score > bestScore && total >= 0) {
-                    bestScore = score;
-                    best = i;
-                }
-            }
-            if (best >= 0 && s.gold - s.shop[best].tier >= (s.round >= 5 ? 10 : 0) - (bestScore >= 4 ? 99 : 0)) {
-                bought = s.buy(best);
-            }
-        }
-        // 2) poser les meilleurs sur le plateau
-        List<Unit> all = new ArrayList<Unit>();
-        for (int i = 0; i < GameState.BENCH; i++) if (s.bench[i] != null) all.add(s.bench[i]);
-        all.addAll(s.boardUnits());
-        Collections.sort(all, new Comparator<Unit>() {
-            @Override
-            public int compare(Unit a, Unit b) {
-                return Double.compare(power(b), power(a));
-            }
-        });
-        java.util.Arrays.fill(s.bench, null);
-        for (Unit[] r : s.board) java.util.Arrays.fill(r, null);
-        int max = s.maxUnits(), benchI = 0;
-        List<Unit> team = new ArrayList<Unit>();
-        for (Unit u : all) {
-            if (team.size() < max) team.add(u);
-            else if (benchI < GameState.BENCH) s.bench[benchI++] = u;
-            else s.gold += u.invested;
-        }
-        for (GameState.Placed p : GameState.arrange(team, new java.util.Random(s.round))) s.board[p.row][p.col] = p.unit;
-        // objets : sur le Pokémon le plus fort qui peut les recevoir
-        for (int i = s.items.size() - 1; i >= 0; i--) {
-            for (int r = 0; r < GameState.ROWS; r++)
-                for (int c = 0; c < GameState.COLS; c++) {
-                    if (i >= s.items.size()) continue;
-                    Unit u = s.board[r][c];
-                    if (u != null && u == team.get(0) && u.canEquip(s.items.get(i))) s.equip(i, GameState.boardSlot(r, c));
-                }
-        }
-        for (int i = s.items.size() - 1; i >= 0; i--) {
-            boolean done = false;
-            for (int r = 0; r < GameState.ROWS && !done; r++)
-                for (int c = 0; c < GameState.COLS && !done; c++) {
-                    Unit u = s.board[r][c];
-                    if (u != null && i < s.items.size() && u.canEquip(s.items.get(i))) done = s.equip(i, GameState.boardSlot(r, c));
-                }
-        }
+        NAIVE.playPrep(s);
     }
 
-    static int countAll(GameState s) {
-        int n = s.boardCount();
-        for (Unit u : s.bench) if (u != null) n++;
-        return n;
-    }
+    private static final Bot NAIVE = Bot.naive();
 }

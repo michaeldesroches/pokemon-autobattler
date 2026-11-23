@@ -13,6 +13,7 @@ Auto battler façon TFT / Super Auto Pets avec des Pokémon de 1re génération 
 
 ## Règles
 
+- **Lobby de 8** : tu affrontes 7 champions d'arène de Kanto (Pierre, Ondine, Major Bob, Érika, Koga, Morgane, Auguste, Giovanni), chacun avec ses goûts (une classe et un type préférés). À chaque manche, tu combats l'un d'eux, sans retomber deux fois de suite sur le même ; si le nombre de survivants est impair, quelqu'un affronte le « fantôme » d'un autre joueur. Le dernier en vie gagne. Le classement est affiché à droite.
 - Chaque manche : achète des Pokémon dans la boutique (coût 1 à 3 selon le tier), place-les sur ton camp du **plateau hexagonal** (4 lignes × 7 cases), puis lance le combat. Le combat est automatique.
 - Au combat, chaque Pokémon **vise l'ennemi le plus proche**, s'en approche (recherche de chemin A*) jusqu'à être à portée, puis attaque. La **portée** dépend de la lignée : 1 case pour le corps à corps, 2 à 4 cases pour les attaquants à distance. Les Spectre visent toujours l'ennemi le plus affaibli.
 - **Mana** : +10 par attaque, +5 par coup reçu. Mana plein → **capacité unique** de la lignée (31 capacités : Giga-Sangsue, Lance-Flammes, Provoc, Tonnerre, Psyko, Blizzard, Séisme, Tisse Ombre…). Survole un Pokémon pour voir la sienne.
@@ -20,11 +21,11 @@ Auto battler façon TFT / Super Auto Pets avec des Pokémon de 1re génération 
 - **Prolongation** : après 30 s de combat, les dégâts augmentent de 20 % par seconde. Au bout de 45 s, le combat est perdu.
 - **3 exemplaires identiques fusionnent** : évolution (Bulbizarre → Herbizarre → Florizarre) ou étoile supplémentaire pour les formes finales (jusqu'à 3★).
 - **Niveau** (3 à 9) = nombre max de Pokémon sur le plateau. +2 XP par manche, ou achète 4 XP pour 4 or. Le niveau augmente aussi les chances de voir des Pokémon de tier 2 et 3 en boutique.
-- **Pool partagé** : chaque Pokémon de base existe en un nombre limité d'exemplaires (18 / 14 / 10 selon le tier). Ceux que tu achètes ne reviennent dans le pool qu'à la revente.
+- **Pool partagé** entre les 8 joueurs : chaque Pokémon de base existe en un nombre limité d'exemplaires (18 / 14 / 10 selon le tier). Ce que les bots achètent ne sort plus dans ta boutique ; les Pokémon reviennent au pool à la revente ou quand un joueur est éliminé.
 - **Objets** : 6 composants (Bandeau Muscle, Lunettes Sages, Vive Griffe, Plaque Fer, Baie Oran, Encens Mer). Glisse-les sur un Pokémon (3 objets max) ; deux composants sur le même Pokémon se combinent en l'un des 21 objets (Orbe Vie, Griffe Rasoir, Casque Brut, Grelot Coque, Restes, Ceinture Force…). Survole un objet pour voir ses recettes.
 - **Pokémon sauvages** : les manches 2, 6, 10, 14… opposent des Pokémon sauvages ; elles rapportent des composants (2 à 3 en cas de victoire, 1 sinon) et coûtent moins de PV en cas de défaite.
 - **Économie** : +5 or par manche, +1 par tranche de 10 or (max +5), +1 en cas de victoire, +1 en série de 3+. Relancer la boutique coûte 1 or. Vendre rembourse ce que tu as investi (et rend ses objets).
-- **Défaite** : tu perds `manche + 2 × Pokémon adverses survivants` PV (60 PV au départ).
+- **Défaite** : tu perds `2 + manche / 2 + Pokémon adverses survivants` PV (60 PV au départ, moitié moins contre les sauvages). Au temps limite, les deux joueurs perdent.
 - La **table des types** s'applique (les immunités sont adoucies à x0.25).
 - **Pokémon des générations suivantes** : quelques lignées choisies parce qu'elles incarnent un rôle (Galekid, Obalie, Riolu, Griknot, Farfuret, Absol, Étourmi, Tarsal, Rémoraid, Larvibule, Brindibou ; les trois en plus remplacent Otaria, Roucool et Chenipan, qui collaient mal à leur classe), et des évolutions apparues plus tard (Onix → Steelix, Insécateur → Cizayox, Magnéton → Magnézone). Le type Ténèbres arrive avec elles (sans le type Fée : Gardevoir reste Psy).
 - **Classes** : chaque lignée a un rôle (Gardien, Combattant, Assassin, Mystique, Tireur), affiché par une icône de couleur sur le plateau, le banc et la boutique. Les Gardiens et Combattants vont devant, les Mystiques et Tireurs derrière ; un contour orange signale un Pokémon mal placé. À partir de 2 Assassins, ils sautent sur l'arrière-ligne adverse au début du combat.

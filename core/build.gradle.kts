@@ -23,3 +23,12 @@ tasks.register<JavaExec>("simulate") {
     mainClass.set("autobattler.Sim")
     args("300")
 }
+
+// ./gradlew :core:simulateLobby : 200 lobbys de 8 bots (classement du bot naïf, durée des parties)
+tasks.register<JavaExec>("simulateLobby") {
+    group = "application"
+    description = "Simule 200 lobbys de 8 joueurs (le bot naïf contre 7 bots à personnalité)."
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("autobattler.Sim")
+    args("lobby", "200")
+}
