@@ -69,6 +69,22 @@ public final class Canvas {
         batch.draw(assets.circle, cx - rx, height - cy - ry, rx * 2, ry * 2);
     }
 
+    /** Segment d'épaisseur {@code th} (éclairs, traînées). */
+    public void line(float x1, float y1, float x2, float y2, float th, Color c) {
+        float dx = x2 - x1, dy = y2 - y1;
+        float len = (float) Math.sqrt(dx * dx + dy * dy);
+        if (len < 0.01f) return;
+        use(c);
+        float ang = (float) Math.toDegrees(Math.atan2(-dy, dx));
+        batch.draw(assets.white, x1, height - y1 - th / 2, 0, th / 2, len, th, 1, 1, ang);
+    }
+
+    /** Image centrée, teintée, avec rayons séparés (halos, anneaux en perspective). */
+    public void centeredTinted(TextureRegion r, float cx, float cy, float rx, float ry, Color c) {
+        use(c);
+        batch.draw(r, cx - rx, height - cy - ry, rx * 2, ry * 2);
+    }
+
     /** Hexagone « pointe en haut » de rayon {@code size} (centre → sommet). */
     public void hex(float cx, float cy, float size, Color c) {
         use(c);

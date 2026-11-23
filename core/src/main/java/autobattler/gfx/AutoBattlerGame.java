@@ -41,6 +41,8 @@ public final class AutoBattlerGame extends ApplicationAdapter {
         viewport.apply();
         // tremblement d'écran : on décale la caméra
         viewport.getCamera().position.set(GameView.W / 2f + view.shakeX(), GameView.H / 2f + view.shakeY(), 0);
+        if (viewport.getCamera() instanceof com.badlogic.gdx.graphics.OrthographicCamera)
+            ((com.badlogic.gdx.graphics.OrthographicCamera) viewport.getCamera()).zoom = view.zoom();
         viewport.getCamera().update();
         batch.setProjectionMatrix(viewport.getCamera().combined);
         batch.begin();
