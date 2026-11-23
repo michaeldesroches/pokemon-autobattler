@@ -29,12 +29,13 @@ public final class Pokedex {
         add("carapuce", "Carapuce", 7, 1, "cara", 44, 50, 64, 43, "carabaffe", WATER);
         add("carabaffe", "Carabaffe", 8, 1, "cara", 59, 65, 80, 58, "tortank", WATER);
         add("tortank", "Tortank", 9, 1, "cara", 79, 85, 105, 78, null, WATER);
-        add("chenipan", "Chenipan", 10, 1, "cheni", 45, 30, 25, 45, "chrysacier", BUG);
-        add("chrysacier", "Chrysacier", 11, 1, "cheni", 50, 25, 55, 30, "papilusion", BUG);
-        add("papilusion", "Papilusion", 12, 1, "cheni", 60, 90, 80, 70, null, BUG, FLYING);
-        add("roucool", "Roucool", 16, 1, "rouc", 40, 45, 38, 56, "roucoups", NORMAL, FLYING);
-        add("roucoups", "Roucoups", 17, 1, "rouc", 63, 60, 52, 71, "roucarnage", NORMAL, FLYING);
-        add("roucarnage", "Roucarnage", 18, 1, "rouc", 83, 80, 70, 101, null, NORMAL, FLYING);
+        // Larvibule et Étourmi remplacent Chenipan et Roucool (mieux dans leur rôle de Tireur et d'Assassin)
+        add("larvibule", "Larvibule", 736, 1, "larv", 47, 62, 45, 46, "chrysapile", BUG);
+        add("chrysapile", "Chrysapile", 737, 1, "larv", 57, 82, 85, 36, "lucanon", BUG, ELECTRIC);
+        add("lucanon", "Lucanon", 738, 1, "larv", 77, 145, 82, 43, null, BUG, ELECTRIC);
+        add("etourmi", "Étourmi", 396, 1, "etou", 40, 55, 30, 60, "etourvol", NORMAL, FLYING);
+        add("etourvol", "Étourvol", 397, 1, "etou", 55, 75, 45, 80, "etouraptor", NORMAL, FLYING);
+        add("etouraptor", "Étouraptor", 398, 1, "etou", 85, 120, 65, 100, null, NORMAL, FLYING);
         add("rattata", "Rattata", 19, 1, "ratt", 30, 56, 35, 72, "rattatac", NORMAL);
         add("rattatac", "Rattatac", 20, 1, "ratt", 55, 81, 65, 97, null, NORMAL);
         add("mystherbe", "Mystherbe", 43, 1, "myst", 45, 75, 60, 30, "ortide", GRASS, POISON);
@@ -75,8 +76,10 @@ public final class Pokedex {
         add("magneti", "Magnéti", 81, 2, "magn", 25, 95, 63, 45, "magneton", ELECTRIC, STEEL);
         add("magneton", "Magnéton", 82, 2, "magn", 50, 120, 83, 70, "magnezone", ELECTRIC, STEEL);
         add("magnezone", "Magnézone", 462, 2, "magn", 70, 130, 102, 60, null, ELECTRIC, STEEL);
-        add("otaria", "Otaria", 86, 2, "otar", 65, 45, 62, 45, "lamantine", WATER);
-        add("lamantine", "Lamantine", 87, 2, "otar", 90, 70, 90, 70, null, WATER, ICE);
+        // Obalie remplace Otaria (un vrai tank Glace/Eau pour les Gardiens)
+        add("obalie", "Obalie", 363, 2, "obal", 70, 55, 50, 25, "phogleck", ICE, WATER);
+        add("phogleck", "Phogleck", 364, 2, "obal", 90, 75, 70, 45, "kaimorse", ICE, WATER);
+        add("kaimorse", "Kaimorse", 365, 2, "obal", 110, 95, 90, 65, null, ICE, WATER);
         add("fantominus", "Fantominus", 92, 2, "fant", 30, 100, 35, 80, "spectrum", GHOST, POISON);
         add("spectrum", "Spectrum", 93, 2, "fant", 45, 115, 50, 95, "ectoplasma", GHOST, POISON);
         add("ectoplasma", "Ectoplasma", 94, 2, "fant", 60, 130, 68, 110, null, GHOST, POISON);
@@ -106,8 +109,8 @@ public final class Pokedex {
         kit("bulbi", 2, Ability.GIGA_SANGSUE);
         kit("sala", 2, Ability.LANCE_FLAMMES);
         kit("cara", 1, Ability.REPLI);
-        kit("cheni", 2, Ability.PARA_SPORE);
-        kit("rouc", 1, Ability.RAPACE);
+        kit("larv", 3, Ability.ELECANON);
+        kit("etou", 1, Ability.RAPACE);
         kit("ratt", 1, Ability.CROC_FATAL);
         kit("myst", 3, Ability.POUDRE_TOXIK);
         kit("ptit", 1, Ability.HYPNOSE);
@@ -118,7 +121,7 @@ public final class Pokedex {
         kit("cani", 1, Ability.VITESSE_EXTREME);
         kit("abra", 4, Ability.PSYKO);
         kit("magn", 3, Ability.CAGE_ECLAIR);
-        kit("otar", 1, Ability.LASER_GLACE);
+        kit("obal", 1, Ability.LASER_GLACE);
         kit("fant", 2, Ability.BALL_OMBRE);
         kit("onix", 1, Ability.PROVOC);
         kit("osse", 1, Ability.OSMERANG);
@@ -135,11 +138,11 @@ public final class Pokedex {
         kit("absol", 1, Ability.TRANCHE_NUIT);
         kit("grik", 1, Ability.SEISME);
         // --- Classe (rôle) de chaque lignée ---
-        role(Trait.GUARDIAN, "cara", "raca", "onix", "ronf", "otar", "gale");
-        role(Trait.FIGHTER, "mach", "osse", "cani", "mini", "riol", "grik");
-        role(Trait.ASSASSIN, "fant", "rouc", "ratt", "inse", "farf", "absol");
-        role(Trait.MYSTIC, "abra", "magn", "lokh", "myst", "goup", "ptit", "tars");
-        role(Trait.MARKSMAN, "pika", "sala", "cheni", "bulbi", "remo", "brin");
+        role(Trait.GUARDIAN, "cara", "raca", "onix", "ronf", "obal", "gale");
+        role(Trait.FIGHTER, "mach", "osse", "cani", "mini", "riol", "grik", "ptit");
+        role(Trait.ASSASSIN, "fant", "etou", "ratt", "inse", "farf", "absol");
+        role(Trait.MYSTIC, "abra", "magn", "lokh", "myst", "goup", "tars");
+        role(Trait.MARKSMAN, "pika", "sala", "larv", "bulbi", "remo", "brin");
         for (Species s : ALL.values()) {
             if (!ABILITY.containsKey(s.line)) throw new IllegalStateException("Lignée sans kit : " + s.line);
             if (!ROLE.containsKey(s.line)) throw new IllegalStateException("Lignée sans classe : " + s.line);

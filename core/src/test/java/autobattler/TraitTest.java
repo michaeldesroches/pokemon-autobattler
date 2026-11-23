@@ -61,7 +61,7 @@ class TraitTest {
         team.add(unit("salameche"));
         Fighter tier1 = new Fighter(team.get(0), true, 3, 3, null, Synergies.traitLevels(team));
         assertEquals(Pokedex.get("pikachu").range(), tier1.range);
-        team.add(unit("chenipan"));
+        team.add(unit("larvibule"));
         Fighter tier2 = new Fighter(team.get(0), true, 3, 3, null, Synergies.traitLevels(team));
         assertEquals(Pokedex.get("pikachu").range() + 1, tier2.range);
     }
