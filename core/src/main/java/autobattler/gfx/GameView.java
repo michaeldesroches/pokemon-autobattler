@@ -1108,59 +1108,94 @@ public final class GameView extends InputAdapter {
             return;
         }
         float bottom = LEFT.y + LEFT.h - 8;
-        float y = LEFT.y + 42;
+        float y = LEFT.y + 34;
 
-        // Classes : actives d'abord, puis par nombre de lignées
+        // 1) bonus actifs, avec leur effet : classes puis types (par nombre de lignées)
         List<Trait> traits = new ArrayList<Trait>(tCounts.keySet());
         Collections.sort(traits, new Comparator<Trait>() {
             @Override
             public int compare(Trait a, Trait b) {
-                int la = tLevels.containsKey(a) ? 1 : 0, lb = tLevels.containsKey(b) ? 1 : 0;
-                if (la != lb) return lb - la;
                 if (!tCounts.get(a).equals(tCounts.get(b))) return tCounts.get(b) - tCounts.get(a);
                 return a.ordinal() - b.ordinal();
             }
         });
-        if (!traits.isEmpty()) {
-            g.text(bold(10), "CLASSES", LEFT.x + 12, y, MUTED);
-            y += 6;
-            for (Trait t : traits) {
-                if (y > bottom - 20) break;
-                Integer lvl = tLevels.get(t);
-                boolean active = lvl != null;
-                float a = active ? 1f : 0.45f;
-                float w = traitPill(g, t, LEFT.x + 10, y, a);
-                g.text(bold(12), tCounts.get(t) + " (" + thresholdsText(t.thresholds()) + ")", LEFT.x + 16 + w, y + 13, active ? TEXT : MUTED);
-                if (active) y = g.wrap(regular(12), t.describe(lvl), LEFT.x + 12, y + 31, LEFT.w - 22, 14, SOFT) - 6;
-                else y += 24;
-            }
-            y += 8;
-        }
-
-        List<PType> order = new ArrayList<PType>(counts.keySet());
-        Collections.sort(order, new Comparator<PType>() {
+        List<PType> types = new ArrayList<PType>(counts.keySet());
+        Collections.sort(types, new Comparator<PType>() {
             @Override
             public int compare(PType a, PType b) {
-                int la = levels.containsKey(a) ? 1 : 0, lb = levels.containsKey(b) ? 1 : 0;
-                if (la != lb) return lb - la;
-                return counts.get(b) - counts.get(a);
+                if (!counts.get(a).equals(counts.get(b))) return counts.get(b) - counts.get(a);
+                return a.ordinal() - b.ordinal();
             }
         });
-        if (order.isEmpty() || y > bottom - 30) return;
-        g.text(bold(10), "TYPES", LEFT.x + 12, y, MUTED);
-        y += 6;
         int hidden = 0;
-        for (PType t : order) {
-            Integer lvl = levels.get(t);
-            boolean active = lvl != null;
-            if (y > bottom - (active ? 34 : 20)) {
+        for (Trait t : traits) {
+            Integer lvl = tLevels.get(t);
+            if (lvl == null) continue;
+            if (y > bottom - 34) {
                 hidden++;
                 continue;
             }
-            typeBadge(g, t, LEFT.x + 10, y, active ? 1f : 0.45f);
-            g.text(bold(12), counts.get(t) + " (" + thresholdsText(Synergies.thresholds(t)) + ")", LEFT.x + 84, y + 13, active ? TEXT : MUTED);
-            if (active) y = g.wrap(regular(12), Synergies.describe(t, lvl), LEFT.x + 12, y + 31, LEFT.w - 22, 14, SOFT) - 6;
-            else y += 24;
+            float w = traitPill(g, t, LEFT.x + 10, y, 1f);
+            g.text(bold(12), tCounts.get(t) + " (" + thresholdsText(t.thresholds()) + ")", LEFT.x + 16 + w, y + 13, TEXT);
+            y = g.wrap(regular(12), t.describe(lvl), LEFT.x + 12, y + 31, LEFT.w - 22, 14, SOFT) - 6;
+        }
+        for (PType t : types) {
+            Integer lvl = levels.get(t);
+            if (lvl == null) continue;
+            if (y > bottom - 34) {
+                hidden++;
+                continue;
+            }
+            typeBadge(g, t, LEFT.x + 10, y, 1f);
+            g.text(bold(12), counts.get(t) + " (" + thresholdsText(Synergies.thresholds(t)) + ")", LEFT.x + 84, y + 13, TEXT);
+            y = g.wrap(regular(12), Synergies.describe(t, lvl), LEFT.x + 12, y + 31, LEFT.w - 22, 14, SOFT) - 6;
+        }
+
+        // 2) le reste en étiquettes compactes « nom n/palier suivant », sur plusieurs colonnes
+        List<Object> pending = new ArrayList<Object>();
+        for (Trait t : traits) if (!tLevels.containsKey(t)) pending.add(t);
+        for (PType t : types) if (!levels.containsKey(t)) pending.add(t);
+        if (!pending.isEmpty() && y <= bottom - 30) {
+            y += 4;
+            g.text(bold(10), "À COMPLÉTER", LEFT.x + 12, y, MUTED);
+            y += 6;
+            float cx = LEFT.x + 10, right = LEFT.x + LEFT.w - 8;
+            for (Object o : pending) {
+                String label;
+                int n, next;
+                Color c;
+                Trait trait = o instanceof Trait ? (Trait) o : null;
+                if (trait != null) {
+                    label = trait.label;
+                    n = tCounts.get(trait);
+                    next = trait.thresholds()[0];
+                    c = Canvas.rgb(trait.rgb);
+                } else {
+                    PType t = (PType) o;
+                    label = t.label;
+                    n = counts.get(t);
+                    next = Synergies.thresholds(t)[0];
+                    c = Canvas.rgb(t.rgb);
+                }
+                String text = label + " " + n + "/" + next;
+                float w = g.width(bold(10), text) + (trait != null ? 22 : 12);
+                if (cx + w > right) {
+                    cx = LEFT.x + 10;
+                    y += 21;
+                }
+                if (y > bottom - 18) {
+                    hidden++;
+                    continue;
+                }
+                g.round(cx, y, w, 17, g.fade(c, 0.4f));
+                float tx = cx + 6;
+                if (trait != null) {
+                    g.imageTinted(assets.roleIcon(trait), cx + 4, y + 2, 13, 13, g.fade(WHITE, 0.8f), false);
+                    tx = cx + 19;
+                }
+                g.text(bold(10), text, tx, y + 12, g.fade(WHITE, 0.85f));
+                cx += w + 4;
+            }
         }
         if (hidden > 0) g.text(regular(12), "+ " + hidden + " autre" + (hidden > 1 ? "s" : ""), LEFT.x + 12, bottom, MUTED);
     }
