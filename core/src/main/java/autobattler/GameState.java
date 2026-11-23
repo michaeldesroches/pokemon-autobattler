@@ -52,7 +52,17 @@ public final class GameState {
     public final Species[] shop = new Species[SHOP];
     public final List<Item> items = new ArrayList<Item>();
     public final List<Placed> enemy = new ArrayList<Placed>();
-    private final Map<Species, Integer> pool = new HashMap<Species, Integer>();
+    /** Exemplaires restants : propre à la partie, ou partagé par les 8 joueurs d'un lobby. */
+    private final Pool pool;
+    /** Lobby auquel appartient ce joueur (null : partie seule contre des adversaires générés). */
+    final Lobby lobby;
+    public final String name;
+    /** Classement final dans le lobby (0 tant que le joueur est en lice). */
+    public int placement;
+    /** Adversaire de la manche (null contre des Pokémon sauvages ou hors lobby). */
+    public String opponentName;
+    /** Vrai si l'adversaire est le « fantôme » d'un joueur (nombre impair de survivants). */
+    public boolean opponentGhost;
     public Phase phase = Phase.PREP;
     public Battle battle;
     public String message = "";
@@ -61,11 +71,28 @@ public final class GameState {
     public final List<Item> lastLoot = new ArrayList<Item>();
 
     public GameState(long seed) {
-        rng = new Random(seed);
-        newGame();
+        this(seed, new Pool(), null, "Toi");
     }
 
+    GameState(long seed, Pool pool, Lobby lobby, String name) {
+        rng = new Random(seed);
+        this.pool = pool;
+        this.lobby = lobby;
+        this.name = name;
+        if (lobby == null) newGame();
+    }
+
+    /** Nouvelle partie (dans un lobby : relance tout le lobby). */
     public void newGame() {
+        if (lobby != null) {
+            lobby.restart();
+            return;
+        }
+        pool.fill();
+        reset();
+    }
+
+    void reset() {
         round = 1;
         hp = START_HP;
         gold = 6;
@@ -79,9 +106,9 @@ public final class GameState {
         for (Unit[] r : board) java.util.Arrays.fill(r, null);
         items.clear();
         lastLoot.clear();
-        pool.clear();
-        for (int tier = 1; tier <= 3; tier++)
-            for (Species s : Pokedex.shopPool(tier)) pool.put(s, POOL_SIZE[tier - 1]);
+        placement = 0;
+        opponentName = null;
+        opponentGhost = false;
         items.add(randomComponent(rng));
         battle = null;
         phase = Phase.PREP;
@@ -148,13 +175,22 @@ public final class GameState {
     // ------------------------------------------------------------------ pool partagé
 
     public int poolCount(Species s) {
-        Integer n = pool.get(s);
-        return n == null ? 0 : n;
+        return pool.count(s);
     }
 
     private void returnToPool(Unit u) {
-        Species base = Pokedex.base(u.species.line);
-        pool.put(base, poolCount(base) + u.copies);
+        pool.add(Pokedex.base(u.species.line), u.copies);
+    }
+
+    /** Joueur éliminé : ses Pokémon retournent dans le pool partagé. */
+    void releaseAll() {
+        for (int slot : allSlots()) {
+            Unit u = get(slot);
+            if (u != null) {
+                returnToPool(u);
+                set(slot, null);
+            }
+        }
     }
 
     /** Tirage pondéré par les exemplaires restants, selon les chances du niveau. */
@@ -270,7 +306,7 @@ public final class GameState {
                 return false;
             }
             gold -= sp.tier;
-            pool.put(sp, poolCount(sp) - 1);
+            pool.take(sp);
             shop[i] = null;
             Unit bought = new Unit(sp, 1, sp.tier);
             mergeInto(same.get(0), get(same.get(0)), get(same.get(1)), bought, same.get(1), -1);
@@ -278,7 +314,7 @@ public final class GameState {
             return true;
         }
         gold -= sp.tier;
-        pool.put(sp, poolCount(sp) - 1);
+        pool.take(sp);
         shop[i] = null;
         bench[free] = new Unit(sp, 1, sp.tier);
         message = sp.name + " rejoint ton équipe.";
@@ -442,7 +478,16 @@ public final class GameState {
     /** À appeler quand battle.result != 0. */
     public void finishCombat() {
         if (phase != Phase.COMBAT || battle == null || battle.result == 0) return;
-        lastWin = battle.result > 0;
+        applyOutcome(battle.result > 0, battle.aliveCount(false), battle.time() >= Battle.TIME_LIMIT);
+        if (lobby != null) lobby.afterCombat(this);
+    }
+
+    /**
+     * Applique l'issue d'un combat : or et butin, série, dégâts. {@code enemySurvivors} = Pokémon adverses
+     * encore debout (ils comptent dans les dégâts). Sert aussi au bot qui affronte le joueur, en miroir.
+     */
+    void applyOutcome(boolean win, int enemySurvivors, boolean timeUp) {
+        lastWin = win;
         lastLoot.clear();
         if (isPveRound()) {
             int n = lastWin ? (round >= 10 ? 3 : 2) : 1;
@@ -459,10 +504,11 @@ public final class GameState {
             message = "Victoire !";
         } else {
             streak = Math.min(-1, streak - 1);
-            lastDamage = round + 2 * battle.aliveCount(false);
+            // lobby : dégâts façon TFT (base selon la manche + 1 par survivant), pour des parties d'une quinzaine de manches
+            lastDamage = lobby != null ? 2 + round / 2 + enemySurvivors : round + 2 * enemySurvivors;
             if (isPveRound()) lastDamage = (lastDamage + 1) / 2;
             hp = Math.max(0, hp - lastDamage);
-            message = battle.time() >= Battle.TIME_LIMIT ? "Temps écoulé… -" + lastDamage + " PV" : "Défaite… -" + lastDamage + " PV";
+            message = timeUp ? "Temps écoulé… -" + lastDamage + " PV" : "Défaite… -" + lastDamage + " PV";
         }
         if (!lastLoot.isEmpty()) {
             StringBuilder sb = new StringBuilder(" Butin : ");
@@ -485,6 +531,7 @@ public final class GameState {
         shopLocked = false;
         prepareEnemy();
         phase = Phase.PREP;
+        if (lobby != null) lobby.afterNextRound(this);
         message = "Manche " + round + " : +" + income + " or (dont " + interest + " d'intérêts)"
                 + (level > levelBefore ? ", niveau " + level + " !" : ".")
                 + (isPveRound() ? " Pokémon sauvages : butin à gagner !" : "");
@@ -492,6 +539,10 @@ public final class GameState {
 
     private void prepareEnemy() {
         enemy.clear();
+        opponentName = null;
+        opponentGhost = false;
+        // dans un lobby, l'adversaire des manches JcJ est choisi par Lobby.pair()
+        if (lobby != null && !isPveRound()) return;
         enemy.addAll(isPveRound() ? generateWild(round, rng) : generateEnemy(round, rng));
     }
 

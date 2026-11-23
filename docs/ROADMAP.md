@@ -74,7 +74,7 @@ Plan initial :
 
 Trois niveaux d'ambition, à faire dans cet ordre :
 
-1. **8 joueurs, dont 7 bots** (1 semaine) : jouable en solo, sans serveur. C'est la priorité.
+1. **8 joueurs, dont 7 bots** (1 semaine) : jouable en solo, sans serveur. C'est la priorité. **Fait** : 7 champions d'arène avec chacun une classe et un type préférés, pool partagé, appariements avec fantôme, classement à droite, dégâts revus pour des parties d'une quinzaine de manches.
 2. **Asynchrone** (1 à 2 semaines) : tu affrontes les équipes enregistrées d'autres joueurs, comme dans Super Auto Pets. Un petit backend Spring Boot suffit.
 3. **Temps réel** (3 à 5 semaines) : un serveur qui fait autorité, en WebSocket, avec des manches synchronisées, la reconnexion et l'anti-triche. C'est le plus gros morceau. Le serveur peut tourner sur un cluster Kubernetes perso.
 

@@ -6,6 +6,7 @@ import autobattler.Fighter;
 import autobattler.GameState;
 import autobattler.Hex;
 import autobattler.Item;
+import autobattler.Lobby;
 import autobattler.PType;
 import autobattler.Pokedex;
 import autobattler.Species;
@@ -97,7 +98,9 @@ public final class GameView extends InputAdapter {
     private final PmdSprites pmd;
     private final Sounds sounds;
     private final Viewport viewport;
-    private final GameState state = new GameState(System.currentTimeMillis());
+    /** Lobby de 8 : le joueur et 7 bots (champions d'arène). */
+    private final Lobby lobby = new Lobby(System.currentTimeMillis());
+    private final GameState state = lobby.human();
     private final Vector2 tmpVec = new Vector2();
     private final Random fxRng = new Random(1);
 
@@ -819,7 +822,7 @@ public final class GameView extends InputAdapter {
 
         int bc = state.boardCount();
         g.text(regular(13), "Équipe " + bc + " / " + state.maxUnits(), 460, 29, bc > state.maxUnits() ? ACCENT : TEXT);
-        g.text(regular(13), "Victoires " + state.wins, 570, 29, TEXT);
+        g.text(regular(13), "En lice " + lobby.aliveCount() + " / " + Lobby.SIZE, 570, 29, TEXT);
         Battle b = state.battle;
         if (state.phase == GameState.Phase.COMBAT && b != null && b.overtimeMult() > 1) {
             g.text(bold(13), "PROLONGATION · dégâts x" + fmt1(b.overtimeMult()), 680, 29, ACCENT);
@@ -851,7 +854,8 @@ public final class GameView extends InputAdapter {
                 }
             }
         }
-        g.text(bold(11), state.isPveRound() ? "POKÉMON SAUVAGES" : "ADVERSAIRE", ARENA.x + 10, ARENA.y + 16,
+        g.text(bold(11), state.isPveRound() ? "POKÉMON SAUVAGES" : state.opponentName == null ? "ADVERSAIRE"
+                        : (state.opponentGhost ? "FANTÔME DE " : "ADVERSAIRE : ") + state.opponentName.toUpperCase(), ARENA.x + 10, ARENA.y + 16,
                 state.isPveRound() ? g.fade(GOLD, 0.8f) : g.fade(WHITE, 0.35f));
         g.text(bold(11), "TON ÉQUIPE", ARENA.x + 10, ARENA.y + ARENA.h - 8, g.fade(WHITE, 0.35f));
 
@@ -1187,6 +1191,8 @@ public final class GameView extends InputAdapter {
         if (dragging && pressItem >= 0) hoverItem = pressItem;
         if (hoverItem >= 0 && hoverItem < state.items.size()) {
             drawItemInfo(g, state.items.get(hoverItem), x, y);
+        } else if (sp == null && !(state.round == 1 && prep)) {
+            drawStandings(g, x, y);
         } else if (sp == null) {
             g.text(bold(15), "Comment jouer", x, y + 14, TEXT);
             String[] lines = {
@@ -1437,6 +1443,64 @@ public final class GameView extends InputAdapter {
         }
     }
 
+    /** Classement du lobby : survivants par PV, puis éliminés par place. */
+    private void drawStandings(Canvas g, float x, float y) {
+        g.text(bold(15), "Classement", x, y + 14, TEXT);
+        g.right(regular(12), GameState.isPveRound(state.round) ? "Manche contre des sauvages" : "Manche " + state.round,
+                RIGHT.x + RIGHT.w - 14, y + 13, MUTED);
+        List<GameState> order = new ArrayList<GameState>(lobby.players());
+        Collections.sort(order, new Comparator<GameState>() {
+            @Override
+            public int compare(GameState a, GameState b) {
+                if ((a.placement == 0) != (b.placement == 0)) return a.placement == 0 ? -1 : 1;
+                if (a.placement != 0) return a.placement - b.placement;
+                if (a.hp != b.hp) return b.hp - a.hp;
+                return b.level - a.level;
+            }
+        });
+        int opp = lobby.opponentOf(state);
+        GameState foe = opp >= 0 ? lobby.players().get(opp) : null;
+        float ry = y + 30, rw = RIGHT.w - 28, rh = 42;
+        int rank = 1;
+        for (GameState p : order) {
+            boolean me = p == state, out = p.placement != 0;
+            boolean vs = p == foe && state.placement == 0;
+            Color bg = me ? g.fade(GOLD, 0.14f) : vs ? g.fade(ACCENT, 0.16f) : g.fade(WHITE, 0.04f);
+            g.round(x, ry, rw, rh - 4, bg);
+            if (vs) g.outline(x, ry, rw, rh - 4, g.fade(ACCENT, 0.8f));
+            float alpha = out ? 0.4f : 1f;
+            g.centered(bold(13), out ? Lobby.ordinal(p.placement) : String.valueOf(rank), x + 14, ry + 24, g.fade(MUTED, alpha + 0.2f));
+            Species avatar = avatar(p);
+            if (avatar != null) {
+                g.alpha = alpha;
+                drawPortrait(g, avatar, x + 30, ry + 3, 32);
+                g.alpha = 1f;
+            } else {
+                g.round(x + 30, ry + 3, 32, 32, g.fade(WHITE, 0.06f));
+            }
+            g.text(bold(13), p.name, x + 70, ry + 16, g.fade(me ? GOLD : TEXT, alpha));
+            String sub = out ? "éliminé" : "niv. " + p.level + (Math.abs(p.streak) >= 2 ? " · série " + (p.streak > 0 ? "+" : "-") + Math.abs(p.streak) : "");
+            if (vs) sub = (state.opponentGhost ? "fantôme · " : "ton adversaire · ") + sub;
+            g.text(regular(12), sub, x + 70, ry + 31, g.fade(vs ? ACCENT : MUTED, alpha + 0.2f));
+            float bx = x + rw - 98, bw = 88;
+            g.round(bx, ry + 12, bw, 12, TRACK);
+            float frac = Math.max(0, p.hp) / (float) GameState.START_HP;
+            if (!out) g.round(bx, ry + 12, bw * frac, 12, frac > 0.5f ? GOOD : frac > 0.25f ? GOLD : ACCENT);
+            g.centered(bold(11), out ? "—" : String.valueOf(p.hp), bx + bw / 2, ry + 22, WHITE);
+            ry += rh;
+            if (!out) rank++;
+        }
+    }
+
+    /** Portrait affiché pour un joueur : son Pokémon le plus avancé sur le plateau. */
+    private static Species avatar(GameState p) {
+        Unit best = null;
+        for (Unit u : p.boardUnits())
+            if (best == null || u.stars * 10 + u.species.tier * 3 + (u.species.evolvesTo == null ? 2 : 0)
+                    > best.stars * 10 + best.species.tier * 3 + (best.species.evolvesTo == null ? 2 : 0)) best = u;
+        return best == null ? null : best.species;
+    }
+
     private void drawFloaters(Canvas g) {
         for (Floater f : floaters) {
             float a = Math.max(0, Math.min(1, f.life / 0.4f));
@@ -1454,10 +1518,12 @@ public final class GameView extends InputAdapter {
         g.round(a.x, a.y, a.w, a.h, g.fade(BLACK, 0.45f));
         g.round(x, y, bw, bh, PANEL);
         boolean over = state.phase == GameState.Phase.GAMEOVER;
-        g.centered(bold(22), over ? "Partie terminée" : state.lastWin ? "Victoire !" : "Défaite", x + bw / 2, y + 42,
-                over ? ACCENT : state.lastWin ? GOOD : ACCENT);
-        g.centered(regular(13), over ? "Manche " + state.round + " atteinte · " + state.wins + " victoires"
-                : state.lastWin ? "Tes Pokémon ont gagné la manche." : "Tu perds " + state.lastDamage + " PV.", x + bw / 2, y + 66, TEXT);
+        boolean champion = over && state.placement == 1;
+        String vs = state.opponentName == null ? "" : (state.opponentGhost ? " contre le fantôme de " : " contre ") + state.opponentName;
+        g.centered(bold(22), champion ? "Champion !" : over ? "Éliminé" : state.lastWin ? "Victoire !" : "Défaite", x + bw / 2, y + 42,
+                champion ? GOLD : over ? ACCENT : state.lastWin ? GOOD : ACCENT);
+        g.centered(regular(13), over ? Lobby.ordinal(state.placement) + " sur " + Lobby.SIZE + " · manche " + state.round + " · " + state.wins + " victoires"
+                : state.lastWin ? "Tu gagnes la manche" + vs + "." : "Tu perds " + state.lastDamage + " PV" + vs + ".", x + bw / 2, y + 66, TEXT);
         if (!over && !state.lastLoot.isEmpty()) {
             int n = state.lastLoot.size();
             for (int i = 0; i < n; i++) drawItemIcon(g, state.lastLoot.get(i), x + bw / 2 + (i - (n - 1) / 2f) * 30, y + 88, 10);
