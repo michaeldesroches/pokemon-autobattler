@@ -914,7 +914,7 @@ public final class GameView extends InputAdapter {
             drawStars(g, u.stars, cellX(cell), cellY(cell) - 72 * s);
             roleBadge(g, u.species.role(), cellX(cell) - 24 * s, cellY(cell) - 58 * s, 7.5f * s);
             if (misplaced) g.centered(bold(13), "!", cellX(cell) + 24 * s, cellY(cell) - 52 * s, ORANGE);
-            drawHeldItems(g, u, cellX(cell), cellY(cell) + 12 * s, 4.5f);
+            drawHeldItems(g, u, cellX(cell), cellY(cell) + 12 * s, 6.5f * s);
         }
     }
 
@@ -1003,7 +1003,7 @@ public final class GameView extends InputAdapter {
         g.rect(bx, by + 6, (float) (bw * Math.min(1, f.mana / f.maxMana)), 2, BLUE);
         roleBadge(g, f.species().role(), bx - 8, by + 3, 6f);
         if (f.unit.stars > 1) drawStars(g, f.unit.stars, x, by - 3);
-        drawHeldItems(g, f.unit, x, y + 12 * s, 3.5f);
+        drawHeldItems(g, f.unit, x, y + 12 * s, 5.5f * s);
 
         float sx = x + bw / 2 + 5, sy = by + 3;
         if (f.burnTime > 0) sy = statusDot(g, sx, sy, Canvas.rgb(PType.FIRE.rgb));
@@ -1063,20 +1063,35 @@ public final class GameView extends InputAdapter {
         g.centered(bold(12), sb.toString(), cx, y, GOLD);
     }
 
+    /** Objets tenus, sous le Pokémon : petites icônes sur pastille de la couleur de l'objet. */
     private void drawHeldItems(Canvas g, Unit u, float cx, float y, float r) {
         int n = u.items.size();
         for (int i = 0; i < n; i++) {
-            float x = cx + (i - (n - 1) / 2f) * (r * 2 + 2);
-            g.ellipse(x, y, r + 1, r + 1, BLACK);
-            g.ellipse(x, y, r, r, Canvas.rgb(u.items.get(i).rgb));
+            Item it = u.items.get(i);
+            float x = cx + (i - (n - 1) / 2f) * (r * 2 + 3);
+            g.ellipse(x, y, r + 1.2f, r + 1.2f, it.isComponent() ? BLACK : GOLD);
+            g.ellipse(x, y, r, r, g.fade(Canvas.rgb(it.rgb), 0.85f));
+            TextureRegion icon = assets.itemIcon(it);
+            if (icon != null) g.image(icon, x - r * 1.25f, y - r * 1.25f, r * 2.5f, r * 2.5f);
         }
     }
 
+    /**
+     * Icône d'objet : sprite de l'objet sur un disque sombre cerclé de sa couleur ; les objets combinés
+     * ont en plus un anneau doré. Sans sprite, pastille colorée avec l'abréviation.
+     */
     private void drawItemIcon(Canvas g, Item it, float cx, float cy, float r) {
         if (!it.isComponent()) g.ellipse(cx, cy, r + 2.5f, r + 2.5f, GOLD);
         g.ellipse(cx, cy, r, r, Canvas.rgb(it.rgb));
-        g.ellipse(cx, cy, r * 0.72f, r * 0.72f, g.fade(BLACK, 0.25f));
-        g.centered(bold(10), it.abbr, cx, cy + 4, WHITE);
+        TextureRegion icon = assets.itemIcon(it);
+        if (icon == null) {
+            g.ellipse(cx, cy, r * 0.72f, r * 0.72f, g.fade(BLACK, 0.25f));
+            g.centered(bold(10), it.abbr, cx, cy + 4, WHITE);
+            return;
+        }
+        g.ellipse(cx, cy, r * 0.84f, r * 0.84f, Canvas.rgb(0x1E2230));
+        float s = r * 2.1f;
+        g.image(icon, cx - s / 2, cy - s / 2, s, s);
     }
 
     private void drawSynergies(Canvas g) {
@@ -1334,7 +1349,7 @@ public final class GameView extends InputAdapter {
             drawPokemon(g, u.species, r.cx(), r.y + r.h - 16, 0.85f, 0, "Idle", clock + i * 0.3f, true);
             drawStars(g, u.stars, r.cx(), r.y + 13);
             roleBadge(g, u.species.role(), r.x + 12, r.y + 12, 7f);
-            drawHeldItems(g, u, r.cx(), r.y + r.h - 9, 4f);
+            drawHeldItems(g, u, r.cx(), r.y + r.h - 9, 6f);
         }
     }
 
