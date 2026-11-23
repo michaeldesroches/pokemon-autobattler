@@ -428,11 +428,63 @@ def gen_font(name, file, size):
         f.write("\n".join(lines) + "\n")
 
 
+# Objets : abréviation (Item.abbr) -> sprite d'objet PokéAPI (mêmes objets que dans les jeux)
+ITEM_SPRITES = {
+    "BM": "muscle-band", "LS": "wise-glasses", "VG": "quick-claw", "PF": "iron-plate", "BO": "oran-berry",
+    "EM": "sea-incense", "OV": "life-orb", "GR": "razor-claw", "MC": "choice-scarf", "CB": "rocky-helmet",
+    "GC": "shell-bell", "BC": "choice-band", "LC": "choice-specs", "ME": "metronome", "GA": "assault-vest",
+    "BS": "sitrus-berry", "PL": "lustrous-orb", "PV": "quick-powder", "LZ": "zoom-lens", "RR": "kings-rock",
+    "MV": "silk-scarf", "HB": "white-herb", "CF": "focus-sash", "EO": "deep-sea-scale", "RE": "leftovers",
+    "EP": "pure-incense", "PE": "mind-plate",
+}
+ITEM_URL = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/{}.png"
+
+
+def gen_items():
+    """Icônes d'objets : sprites PokéAPI rognés, centrés et agrandis x2 (pixels nets) dans des cases de 64 px.
+    Écrit ui/items.png et ui/items.txt (« ABBR colonne ligne » par ligne). Vérifie que Item.java n'a pas
+    d'abréviation sans icône."""
+    import re
+    java = open(os.path.join(ROOT, "core", "src", "main", "java", "autobattler", "Item.java"), encoding="utf-8").read()
+    # component(id, name, abbr…) et combine(a, b, name, abbr…) : les abréviations sont les seules chaînes de 2 majuscules
+    found = re.findall(r'"([A-Z]{2})"', java)
+    missing = [a for a in found if a not in ITEM_SPRITES]
+    if missing:
+        raise SystemExit("objets sans icône dans ITEM_SPRITES : " + ", ".join(missing))
+    d = os.path.join(CACHE, "items")
+    os.makedirs(d, exist_ok=True)
+    cell, cols = 64, 9
+    keys = list(ITEM_SPRITES.keys())
+    rows = (len(keys) + cols - 1) // cols
+    sheet = Image.new("RGBA", (cell * cols, cell * rows), (0, 0, 0, 0))
+    lines = []
+    for i, abbr in enumerate(keys):
+        slug = ITEM_SPRITES[abbr]
+        path = os.path.join(d, slug + ".png")
+        if not os.path.exists(path):
+            urllib.request.urlretrieve(ITEM_URL.format(slug), path)
+        im = Image.open(path).convert("RGBA")
+        bbox = im.getbbox()
+        if bbox:
+            im = im.crop(bbox)
+        k = max(1, min((cell - 4) // im.width, (cell - 4) // im.height))
+        im = im.resize((im.width * k, im.height * k), Image.NEAREST)
+        c, r = i % cols, i // cols
+        sheet.paste(im, (c * cell + (cell - im.width) // 2, r * cell + (cell - im.height) // 2), im)
+        lines.append("%s %d %d" % (abbr, c, r))
+    ui = os.path.join(ROOT, "assets", "ui")
+    sheet.save(os.path.join(ui, "items.png"))
+    with open(os.path.join(ui, "items.txt"), "w") as f:
+        f.write("cell %d\n" % cell + "\n".join(lines) + "\n")
+    print("objets : %d icônes" % len(keys))
+
+
 def main():
     os.makedirs(ASSETS, exist_ok=True)
     gen_sprites()
     gen_pmd()
     gen_ui()
+    gen_items()
     for name, (file, size) in FONTS.items():
         gen_font(name, file, size)
     print("polices :", ", ".join(FONTS))

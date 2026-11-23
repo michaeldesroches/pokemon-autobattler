@@ -15,7 +15,7 @@ public final class Assets implements Disposable {
     private static final int[] BOLD_SIZES = {10, 11, 12, 13, 15, 18, 22};
     private static final int[] REGULAR_SIZES = {12, 13};
 
-    private final Texture spritesTex, roundTex, outlineTex, circleTex, hexTex, hexOutlineTex, rolesTex, ringTex, glowTex;
+    private final Texture spritesTex, roundTex, outlineTex, circleTex, hexTex, hexOutlineTex, rolesTex, ringTex, glowTex, itemsTex;
     private final Map<String, TextureRegion> sprites = new HashMap<String, TextureRegion>();
     private final Map<String, BitmapFont> fonts = new HashMap<String, BitmapFont>();
 
@@ -23,6 +23,8 @@ public final class Assets implements Disposable {
     public final TextureRegion circle, white, hex, hexOutline, ring, glow;
     /** Icônes de classe blanches (à teinter), indexées par {@code Trait.ordinal()}. */
     private final TextureRegion[] roleIcons;
+    /** Icônes d'objets (sprites PokéAPI), indexées par abréviation ({@code Item.abbr}). */
+    private final java.util.Map<String, TextureRegion> itemIcons = new java.util.HashMap<String, TextureRegion>();
 
     public Assets() {
         spritesTex = new Texture(Gdx.files.internal("sprites.png"));
@@ -53,6 +55,17 @@ public final class Assets implements Disposable {
         ring = new TextureRegion(ringTex);
         glowTex = linear("ui/glow.png");
         glow = new TextureRegion(glowTex);
+        itemsTex = linear("ui/items.png");
+        int cell = 64;
+        for (String line : Gdx.files.internal("ui/items.txt").readString("UTF-8").split("\n")) {
+            String[] p = line.trim().split(" ");
+            if (p.length != 3) continue;
+            if (p[0].equals("cell")) {
+                cell = Integer.parseInt(p[1]);
+                continue;
+            }
+            itemIcons.put(p[0], new TextureRegion(itemsTex, Integer.parseInt(p[1]) * cell, Integer.parseInt(p[2]) * cell, cell, cell));
+        }
         rolesTex = linear("ui/roles.png");
         int n = rolesTex.getHeight();
         roleIcons = new TextureRegion[rolesTex.getWidth() / n];
@@ -74,6 +87,11 @@ public final class Assets implements Disposable {
         f.getData().setScale(0.5f);
         f.setUseIntegerPositions(false);
         fonts.put(name, f);
+    }
+
+    /** Icône d'un objet (null si absente : on garde alors la pastille colorée). */
+    public TextureRegion itemIcon(autobattler.Item it) {
+        return itemIcons.get(it.abbr);
     }
 
     /** Icône (blanche) d'une classe. */
@@ -105,6 +123,7 @@ public final class Assets implements Disposable {
         hexTex.dispose();
         hexOutlineTex.dispose();
         rolesTex.dispose();
+        itemsTex.dispose();
         ringTex.dispose();
         glowTex.dispose();
         for (BitmapFont f : fonts.values()) f.dispose();
