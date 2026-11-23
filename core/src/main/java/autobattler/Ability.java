@@ -9,7 +9,7 @@ public enum Ability {
     GIGA_SANGSUE("Giga-Sangsue", "220% de dégâts, se soigne de 60% des dégâts infligés.", 80, 20),
     LANCE_FLAMMES("Lance-Flammes", "Souffle sur 3 cases en ligne : 180% de dégâts et brûlure 4 s.", 90, 20),
     REPLI("Repli", "Bouclier de 35% de ses PV max pendant 4 s.", 70, 30),
-    PARA_SPORE("Para-Spore", "120% de dégâts et paralyse la cible 3 s.", 60, 0),
+    ELECANON("Élecanon", "Canon électrique : 120% de dégâts et paralyse la cible 3 s.", 60, 0),
     RAPACE("Rapace", "Fond sur l'ennemi le plus affaibli : 220% de dégâts.", 70, 20),
     CROC_FATAL("Croc Fatal", "100% de dégâts + 20% des PV restants de la cible.", 60, 0),
     POUDRE_TOXIK("Poudre Toxik", "Empoisonne la cible et ses voisins : 5% PV max/s pendant 4 s.", 80, 20),

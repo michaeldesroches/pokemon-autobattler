@@ -301,7 +301,7 @@ public final class Battle {
             case REPLI:
                 addShield(f, 0.35 * f.maxHp, 4);
                 break;
-            case PARA_SPORE:
+            case ELECANON:
                 hit(f, t, 1.2, true);
                 paralyze(t, 3);
                 break;
