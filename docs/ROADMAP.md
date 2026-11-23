@@ -55,6 +55,10 @@ Chaque lignée a une classe de rôle (Gardien, Combattant, Assassin, Mystique, T
 
 Pour que chaque classe ait des représentants évidents, le Pokédex est sorti de la 1re génération : 8 lignées ajoutées (Galekid, Riolu, Griknot, Farfuret, Absol, Tarsal, Rémoraid, Brindibou, chacune avec sa capacité) et 3 évolutions apparues plus tard (Steelix, Cizayox, Magnézone), soit 31 lignées et 76 espèces. Nouveau type Ténèbres (palier 2 : coups critiques) ; l'Acier, devenu fréquent, passe aux paliers 2/3. Effet de bord : la boutique est plus diluée, les fusions arrivent plus tard (bot naïf : manche moyenne 9,9 au lieu de 10,2).
 
+### Ajout : animations de combat — fait
+
+Plus de mise en scène sans changer de technique (toujours de la 2D en perspective) : animations PMD de tir et de charge, projectiles différents selon le type, ondes de choc, halos et zoom au lancement des capacités, bulle de bouclier, effets de statut et K.O. animé. Une vraie 3D a été écartée : pas de modèles 3D de Pokémon sous licence utilisable.
+
 ## Étape 3 : visuel 3/4 (2 à 3 semaines) — fait
 
 Ce qui a été livré : interface 16:9 (1280×720) façon TFT (boutique en cartes avec portraits, panneau niveau/or près de la boutique), plateau hexagonal en perspective, sprites animés PMDCollab (attente, marche, attaque, dégâts, sommeil) orientés vers leur cible, portraits, particules par type, tremblement d'écran sur les capacités, bruitages et musique synthétisés par script, bouton son. Reportés : portraits des autres joueurs et historique (avec le lobby de l'étape 4).

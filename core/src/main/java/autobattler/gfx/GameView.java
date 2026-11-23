@@ -122,6 +122,12 @@ public final class GameView extends InputAdapter {
         float t;
         int dir;
         boolean once;
+        /** Halo de lancement de capacité (1 → 0). */
+        float glow;
+        /** Minuteur des particules d'ambiance (statuts). */
+        float fxTimer;
+        /** Vrai si l'étourdissement en cours vient du gel. */
+        boolean frozen;
     }
 
     private final Map<Fighter, AnimState> animStates = new HashMap<Fighter, AnimState>();
@@ -145,12 +151,52 @@ public final class GameView extends InputAdapter {
     private static final class Projectile {
         final Fighter src, tgt;
         final Color color;
-        float t;
+        final PType type;
+        final boolean big;
+        /** Positions figées au départ (la cible peut mourir en vol). */
+        final float x0, y0, x1, y1;
+        float t, trail;
 
-        Projectile(Fighter src, Fighter tgt, Color color) {
+        Projectile(Fighter src, Fighter tgt, PType type, boolean big, float x0, float y0, float x1, float y1) {
             this.src = src;
             this.tgt = tgt;
+            this.type = type;
+            this.color = Canvas.rgb(type.rgb);
+            this.big = big;
+            this.x0 = x0;
+            this.y0 = y0;
+            this.x1 = x1;
+            this.y1 = y1;
+        }
+
+        /** Tir en cloche (roche, eau, poison, sol) plutôt qu'en ligne droite. */
+        boolean lobbed() {
+            return type == PType.ROCK || type == PType.GROUND || type == PType.WATER || type == PType.POISON;
+        }
+
+        float x() {
+            return x0 + (x1 - x0) * t;
+        }
+
+        float y() {
+            float arc = lobbed() ? (float) Math.sin(Math.PI * t) * (big ? 46 : 32) : 0;
+            return y0 + (y1 - y0) * t - arc;
+        }
+    }
+
+    /** Onde de choc : anneau qui s'élargit (zones, lancements, K.O.). */
+    private static final class Ring {
+        final float x, y, maxR;
+        final Color color;
+        final float duration;
+        float t;
+
+        Ring(float x, float y, float maxR, Color color, float duration) {
+            this.x = x;
+            this.y = y;
+            this.maxR = maxR;
             this.color = new Color(color);
+            this.duration = duration;
         }
     }
 
@@ -167,7 +213,7 @@ public final class GameView extends InputAdapter {
     }
 
     private static final class Particle {
-        float x, y, vx, vy, life, maxLife, size;
+        float x, y, vx, vy, life, maxLife, size, gravity = 160;
         final Color color;
 
         Particle(float x, float y, float vx, float vy, float life, float size, Color color) {
@@ -179,11 +225,19 @@ public final class GameView extends InputAdapter {
             this.size = size;
             this.color = new Color(color);
         }
+
+        Particle gravity(float g) {
+            this.gravity = g;
+            return this;
+        }
     }
 
     private final List<Floater> floaters = new ArrayList<Floater>();
     private final List<Projectile> projectiles = new ArrayList<Projectile>();
     private final List<Area> areas = new ArrayList<Area>();
+    private final List<Ring> rings = new ArrayList<Ring>();
+    /** Léger zoom de caméra sur les grosses capacités (0 = aucun). */
+    private float zoomPunch;
     private final List<Particle> particles = new ArrayList<Particle>();
     private final Set<Fighter> shownAbility = new HashSet<Fighter>();
 
@@ -192,6 +246,11 @@ public final class GameView extends InputAdapter {
         this.pmd = pmd;
         this.sounds = sounds;
         this.viewport = viewport;
+    }
+
+    /** Zoom de la caméra (1 = normal, < 1 = rapproché). */
+    public float zoom() {
+        return 1f - zoomPunch;
     }
 
     public float shakeX() {
@@ -207,6 +266,7 @@ public final class GameView extends InputAdapter {
     public void update(float dt) {
         clock += dt;
         shake = Math.max(0, shake - dt * 18);
+        zoomPunch = Math.max(0, zoomPunch - dt * 0.12f);
         if (state.phase == GameState.Phase.COMBAT && state.battle != null) {
             Battle b = state.battle;
             if (b.result == 0) {
@@ -241,8 +301,22 @@ public final class GameView extends InputAdapter {
         }
         for (Iterator<Projectile> it = projectiles.iterator(); it.hasNext(); ) {
             Projectile p = it.next();
-            p.t += dt * speed / 0.2f;
-            if (p.t >= 1) it.remove();
+            p.t += dt * speed / (p.big ? 0.32f : 0.22f);
+            p.trail -= dt;
+            if (p.trail <= 0 && p.type != PType.ELECTRIC) {
+                p.trail = 0.016f;
+                particles.add(new Particle(p.x(), p.y(), (fxRng.nextFloat() - 0.5f) * 30, (fxRng.nextFloat() - 0.5f) * 30,
+                        0.25f, p.big ? 3.5f : 2.2f, p.color).gravity(0));
+            }
+            if (p.t >= 1) {
+                burst(p.x1, p.y1, p.color, p.big ? 10 : 5, p.big ? 130 : 80);
+                it.remove();
+            }
+        }
+        for (Iterator<Ring> it = rings.iterator(); it.hasNext(); ) {
+            Ring r = it.next();
+            r.t += dt * speed / r.duration;
+            if (r.t >= 1) it.remove();
         }
         for (Iterator<Area> it = areas.iterator(); it.hasNext(); ) {
             Area a = it.next();
@@ -254,7 +328,7 @@ public final class GameView extends InputAdapter {
             p.life -= dt;
             p.x += p.vx * dt;
             p.y += p.vy * dt;
-            p.vy += 160 * dt;
+            p.vy += p.gravity * dt;
             if (p.life <= 0) it.remove();
         }
     }
@@ -280,6 +354,8 @@ public final class GameView extends InputAdapter {
     private void updateAnim(Fighter f, float dt) {
         AnimState a = anim(f);
         a.t += dt;
+        a.glow = Math.max(0, a.glow - dt * 2.2f);
+        if (f.alive) statusFx(f, a, dt);
         // orientation : vers la cible, ou dans le sens du déplacement
         float dx = 0, dy = 0;
         if (f.moving()) {
@@ -310,6 +386,25 @@ public final class GameView extends InputAdapter {
         }
     }
 
+    /** Particules d'ambiance des statuts : flammèches, bulles de poison, étincelles, « z ». */
+    private void statusFx(Fighter f, AnimState a, float dt) {
+        a.fxTimer -= dt;
+        if (a.fxTimer > 0) return;
+        a.fxTimer = 0.12f;
+        float s = persp(Hex.row(f.cell));
+        float x = fx(f) + (fxRng.nextFloat() - 0.5f) * 26 * s, y = fy(f) - (10 + fxRng.nextFloat() * 30) * s;
+        if (f.burnTime > 0)
+            particles.add(new Particle(x, y, 0, -30, 0.5f, 2.6f, Canvas.rgb(PType.FIRE.rgb)).gravity(-40));
+        if (f.poisonTime > 0 && fxRng.nextFloat() < 0.6f)
+            particles.add(new Particle(x, y, 0, -12, 0.7f, 2.4f, Canvas.rgb(PType.POISON.rgb)).gravity(-20));
+        if (f.paraTime > 0 && fxRng.nextFloat() < 0.5f)
+            particles.add(new Particle(x, y, (fxRng.nextFloat() - 0.5f) * 120, (fxRng.nextFloat() - 0.5f) * 120,
+                    0.15f, 2f, Canvas.rgb(PType.ELECTRIC.rgb)).gravity(0));
+        if (f.sleep > 0 && fxRng.nextFloat() < 0.12f)
+            floaters.add(new Floater(fx(f) + 14 * s, fy(f) - 60 * s, "z", Canvas.rgb(0xA8C8FF), false));
+        if (f.stun <= 0) a.frozen = false;
+    }
+
     /** Direction PMD (0 bas … 4 haut … 7 bas-gauche) depuis un vecteur écran (y vers le bas). */
     private static int dirFromVector(float dx, float dy) {
         double ang = Math.toDegrees(Math.atan2(dy / SQUASH, dx));
@@ -324,7 +419,7 @@ public final class GameView extends InputAdapter {
             case ATTACK: {
                 ev.src.lunge = 1;
                 ev.tgt.flash = 1;
-                if (!ev.special) play(ev.src, "Attack");
+                if (!ev.special) playAttack(ev.src);
                 AnimState ta = anim(ev.tgt);
                 if (!ta.once || !"Attack".equals(ta.name)) play(ev.tgt, "Hurt");
                 boolean crit = "crit".equals(ev.text);
@@ -332,7 +427,7 @@ public final class GameView extends InputAdapter {
                 String txt = Math.round(ev.amount) + (ev.mult > 1.01 || crit ? "!" : "");
                 float s = persp(Hex.row(ev.tgt.cell));
                 floaters.add(new Floater(fx(ev.tgt) + (fxRng.nextFloat() - 0.5f) * 16, fy(ev.tgt) - 86 * s, txt, c, ev.special || crit));
-                if (ev.src.range > 1 && !ev.special) projectiles.add(new Projectile(ev.src, ev.tgt, Canvas.rgb(ev.type.rgb)));
+                if (ev.src.range > 1 && !ev.special) shoot(ev.src, ev.tgt, ev.type, false);
                 burst(fx(ev.tgt), fy(ev.tgt) - 30 * s, Canvas.rgb(ev.type.rgb), crit ? 9 : 5, crit ? 120 : 80);
                 if (crit) {
                     shake = Math.max(shake, 3);
@@ -348,12 +443,12 @@ public final class GameView extends InputAdapter {
                     sounds.play("ability", 0.6f, 80);
                     shake = Math.max(shake, 4);
                 }
-                play(ev.src, "Attack");
-                if (ev.src.range > 1 && ev.tgt != null) projectiles.add(new Projectile(ev.src, ev.tgt, Canvas.rgb(ev.type.rgb)));
+                castFx(ev);
                 break;
             case AREA: {
                 Color c = Canvas.rgb(ev.type.rgb);
                 areas.add(new Area(ev.cell, ev.radius, c));
+                rings.add(new Ring(cellX(ev.cell), cellY(ev.cell), (ev.radius + 0.6f) * HW * persp(Hex.row(ev.cell)), c, 0.45f));
                 for (int cell = 0; cell < Hex.CELLS; cell++) {
                     if (Hex.distance(cell, ev.cell) <= ev.radius) burst(cellX(cell), cellY(cell) - 10, c, 4, 90);
                 }
@@ -362,21 +457,68 @@ public final class GameView extends InputAdapter {
             }
             case HEAL:
                 floaters.add(new Floater(fx(ev.tgt), fy(ev.tgt) - 86 * persp(Hex.row(ev.tgt.cell)), "+" + Math.round(ev.amount), HEAL, false));
-                burst(fx(ev.tgt), fy(ev.tgt) - 20, HEAL, 6, 50);
+                for (int i = 0; i < 8; i++) {
+                    float s = persp(Hex.row(ev.tgt.cell));
+                    particles.add(new Particle(fx(ev.tgt) + (fxRng.nextFloat() - 0.5f) * 30 * s, fy(ev.tgt) - fxRng.nextFloat() * 30 * s,
+                            0, -20 - fxRng.nextFloat() * 30, 0.6f + 0.3f * fxRng.nextFloat(), 2.5f, HEAL).gravity(-30));
+                }
+                anim(ev.tgt).glow = Math.max(anim(ev.tgt).glow, 0.5f);
                 break;
             case DODGE:
                 floaters.add(new Floater(fx(ev.tgt), fy(ev.tgt) - 50, "Esquive", DODGE, false));
                 break;
             case STATUS:
+                if (ev.text.startsWith("Gel")) anim(ev.tgt).frozen = true;
                 floaters.add(new Floater(fx(ev.tgt), fy(ev.tgt) - 42, ev.text, statusColor(ev.text), false));
                 break;
-            case FAINT:
+            case FAINT: {
+                float s = persp(Hex.row(ev.tgt.cell));
                 burst(fx(ev.tgt), fy(ev.tgt) - 20, WHITE, 12, 110);
+                for (int i = 0; i < 10; i++)
+                    particles.add(new Particle(fx(ev.tgt) + (fxRng.nextFloat() - 0.5f) * 40 * s, fy(ev.tgt) - fxRng.nextFloat() * 20 * s,
+                            (fxRng.nextFloat() - 0.5f) * 40, -10 - fxRng.nextFloat() * 25, 0.9f, 5 + fxRng.nextFloat() * 4,
+                            SMOKE).gravity(-15));
+                rings.add(new Ring(fx(ev.tgt), fy(ev.tgt), 34 * s, WHITE, 0.35f));
                 sounds.play("faint", 0.5f, 80);
                 break;
+            }
             default:
                 break;
         }
+    }
+
+    private static final Color SMOKE = Canvas.rgba(0xC8C8D0, 150);
+
+    /** Attaque normale : animation de tir pour les Pokémon à distance (si le sprite l'a). */
+    private void playAttack(Fighter f) {
+        if (f.range > 1 && pmd.anim(f.species().dex, "Shoot") != null) play(f, "Shoot");
+        else play(f, "Attack");
+    }
+
+    private void shoot(Fighter src, Fighter tgt, PType type, boolean big) {
+        float ss = persp(Hex.row(src.cell)), ts = persp(Hex.row(tgt.cell));
+        projectiles.add(new Projectile(src, tgt, type, big, fx(src), fy(src) - 30 * ss, fx(tgt), fy(tgt) - 28 * ts));
+    }
+
+    /** Mise en scène d'une capacité : animation, halo, anneau, projectile, zoom au premier lancement. */
+    private void castFx(Battle.Event ev) {
+        Fighter f = ev.src;
+        boolean support = ev.tgt == null || ev.tgt.player == f.player;
+        if (support && pmd.anim(f.species().dex, "Charge") != null) play(f, "Charge");
+        else playAttack(f);
+        AnimState a = anim(f);
+        a.glow = 1;
+        float s = persp(Hex.row(f.cell));
+        Color c = Canvas.rgb(ev.type.rgb);
+        rings.add(new Ring(fx(f), fy(f), 40 * s, c, 0.4f));
+        for (int i = 0; i < 14; i++) {
+            double ang = Math.PI * 2 * i / 14;
+            particles.add(new Particle(fx(f), fy(f) - 24 * s, (float) Math.cos(ang) * 90, (float) Math.sin(ang) * 90 * SQUASH,
+                    0.35f, 2.6f, c).gravity(0));
+        }
+        if (!support && f.range > 1) shoot(f, ev.tgt, ev.type, true);
+        if (shownAbility.contains(f)) return;
+        zoomPunch = Math.max(zoomPunch, 0.035f);
     }
 
     private void burst(float x, float y, Color c, int n, float speedMax) {
@@ -729,13 +871,12 @@ public final class GameView extends InputAdapter {
                     return Float.compare(fy(a), fy(b));
                 }
             });
-            for (Fighter f : order) drawFighter(g, f);
-            for (Projectile p : projectiles) {
-                float x = fx(p.src) + (fx(p.tgt) - fx(p.src)) * p.t;
-                float y = fy(p.src) - 32 + (fy(p.tgt) - fy(p.src)) * p.t;
-                g.ellipse(x, y, 8, 8, g.fade(p.color, 0.45f));
-                g.ellipse(x, y, 4, 4, WHITE);
+            for (Ring r : rings) {
+                float rr = r.maxR * (0.25f + 0.75f * r.t);
+                g.centeredTinted(assets.ring, r.x, r.y, rr, rr * SQUASH, g.fade(r.color, 0.8f * (1 - r.t)));
             }
+            for (Fighter f : order) drawFighter(g, f);
+            for (Projectile p : projectiles) drawProjectile(g, p);
             return;
         }
 
@@ -773,6 +914,35 @@ public final class GameView extends InputAdapter {
         }
     }
 
+    private void drawProjectile(Canvas g, Projectile p) {
+        float x = p.x(), y = p.y(), k = p.big ? 1.6f : 1f;
+        if (p.type == PType.ELECTRIC) {
+            // éclair : segments brisés du lanceur à la tête du tir
+            float px = p.x0, py = p.y0;
+            int n = 6;
+            for (int i = 1; i <= n; i++) {
+                float u = p.t * i / n;
+                float nx = p.x0 + (p.x1 - p.x0) * u + (i < n ? (fxRng.nextFloat() - 0.5f) * 14 : 0);
+                float ny = p.y0 + (p.y1 - p.y0) * u + (i < n ? (fxRng.nextFloat() - 0.5f) * 14 : 0);
+                g.line(px, py, nx, ny, 4 * k, g.fade(p.color, 0.6f));
+                g.line(px, py, nx, ny, 1.6f * k, WHITE);
+                px = nx;
+                py = ny;
+            }
+        }
+        g.centeredTinted(assets.glow, x, y, 16 * k, 16 * k, g.fade(p.color, 0.9f));
+        if (p.type == PType.ICE || p.type == PType.STEEL) {
+            g.line(x - 6 * k, y, x + 6 * k, y, 3 * k, WHITE);
+            g.line(x, y - 6 * k, x, y + 6 * k, 3 * k, WHITE);
+        } else if (p.type == PType.GRASS || p.type == PType.BUG) {
+            g.ellipse(x, y, 6 * k, 3 * k, Canvas.rgb(0xB8F070));
+        } else if (p.type == PType.ROCK || p.type == PType.GROUND) {
+            g.ellipse(x, y, 5 * k, 4.5f * k, Canvas.rgb(0x8A7550));
+        } else {
+            g.ellipse(x, y, 3.5f * k, 3.5f * k, WHITE);
+        }
+    }
+
     private void drawTile(Canvas g, int cell, Color c, boolean outline) {
         int r = Hex.row(cell);
         float w = tileW(r) * 0.95f / 0.866f, h = tileH(r) * 0.95f;
@@ -784,14 +954,38 @@ public final class GameView extends InputAdapter {
     private void drawFighter(Canvas g, Fighter f) {
         float x = fx(f), y = fy(f), s = fScale(f);
         AnimState a = anim(f);
-        g.alpha = f.alive ? 1f : Math.max(0f, 0.6f - a.t * 0.8f);
+        // K.O. : le Pokémon s'affaisse et s'efface
+        g.alpha = f.alive ? 1f : Math.max(0f, 1f - a.t / 0.8f);
         if (g.alpha <= 0) {
             g.alpha = 1f;
             return;
         }
+        if (!f.alive) y += Math.min(0.8f, a.t) * 14 * s;
         if (f.tauntTime > 0) g.ellipse(x, y, 30 * s, 12 * s, g.fade(ACCENT, 0.35f));
+        Color typeColor = Canvas.rgb(f.species().moveType().rgb);
+        if (f.alive && f.maxMana > 0 && f.mana >= 0.85 * f.maxMana) {
+            // capacité presque prête : halo qui pulse au sol
+            float pulse = 0.35f + 0.2f * (float) Math.sin(clock * 10);
+            g.centeredTinted(assets.glow, x, y, 34 * s, 14 * s, g.fade(typeColor, pulse));
+        }
+        if (a.glow > 0) g.centeredTinted(assets.glow, x, y - 26 * s, 46 * s, 46 * s, g.fade(typeColor, 0.7f * a.glow));
         drawPokemon(g, f.species(), x, y, s, a.dir, a.name, a.t, !a.once);
-        if (f.stun > 0) g.ellipse(x, y - 28 * s, 32 * s, 32 * s, g.fade(Canvas.rgb(PType.ICE.rgb), 0.4f));
+        if (f.alive && f.shield > 0) {
+            float b = 0.55f + 0.1f * (float) Math.sin(clock * 6);
+            g.centeredTinted(assets.glow, x, y - 26 * s, 34 * s, 36 * s, g.fade(Canvas.rgb(0x7FB8FF), 0.25f));
+            g.centeredTinted(assets.ring, x, y - 26 * s, 32 * s, 34 * s, g.fade(Canvas.rgb(0xA8D4FF), b));
+        }
+        if (f.alive && f.stun > 0) {
+            if (a.frozen) {
+                g.ellipse(x, y - 28 * s, 30 * s, 32 * s, g.fade(Canvas.rgb(PType.ICE.rgb), 0.4f));
+            } else {
+                // étourdi : étoiles qui tournent au-dessus de la tête
+                for (int i = 0; i < 3; i++) {
+                    double ang = clock * 5 + i * Math.PI * 2 / 3;
+                    g.text(bold(12), "★", x + (float) Math.cos(ang) * 14 * s - 5, y - 64 * s + (float) Math.sin(ang) * 5 * s, GOLD);
+                }
+            }
+        }
         if (f.flash > 0) g.ellipse(x, y - 28 * s, 26 * s, 26 * s, g.fade(Canvas.rgb(0xFF5050), (float) (0.35 * f.flash)));
         g.alpha = 1f;
         if (!f.alive) return;

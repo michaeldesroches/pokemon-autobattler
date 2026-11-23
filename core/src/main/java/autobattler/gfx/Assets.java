@@ -15,12 +15,12 @@ public final class Assets implements Disposable {
     private static final int[] BOLD_SIZES = {10, 11, 12, 13, 15, 18, 22};
     private static final int[] REGULAR_SIZES = {12, 13};
 
-    private final Texture spritesTex, roundTex, outlineTex, circleTex, hexTex, hexOutlineTex, rolesTex;
+    private final Texture spritesTex, roundTex, outlineTex, circleTex, hexTex, hexOutlineTex, rolesTex, ringTex, glowTex;
     private final Map<String, TextureRegion> sprites = new HashMap<String, TextureRegion>();
     private final Map<String, BitmapFont> fonts = new HashMap<String, BitmapFont>();
 
     public final NinePatch round, outline;
-    public final TextureRegion circle, white, hex, hexOutline;
+    public final TextureRegion circle, white, hex, hexOutline, ring, glow;
     /** Icônes de classe blanches (à teinter), indexées par {@code Trait.ordinal()}. */
     private final TextureRegion[] roleIcons;
 
@@ -49,6 +49,10 @@ public final class Assets implements Disposable {
         white = new TextureRegion(roundTex, 19, 19, 2, 2);
         hex = new TextureRegion(hexTex);
         hexOutline = new TextureRegion(hexOutlineTex);
+        ringTex = linear("ui/ring.png");
+        ring = new TextureRegion(ringTex);
+        glowTex = linear("ui/glow.png");
+        glow = new TextureRegion(glowTex);
         rolesTex = linear("ui/roles.png");
         int n = rolesTex.getHeight();
         roleIcons = new TextureRegion[rolesTex.getWidth() / n];
@@ -101,6 +105,8 @@ public final class Assets implements Disposable {
         hexTex.dispose();
         hexOutlineTex.dispose();
         rolesTex.dispose();
+        ringTex.dispose();
+        glowTex.dispose();
         for (BitmapFont f : fonts.values()) f.dispose();
     }
 }

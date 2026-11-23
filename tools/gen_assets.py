@@ -2,7 +2,7 @@
 """Génère les assets du jeu dans assets/ :
 
 - sprites.png + sprites.txt : atlas des sprites PokéAPI (face et dos), marges transparentes rognées ;
-- ui/*.png : textures d'interface (rectangle arrondi plein et contour, cercle, hexagones, icônes de classe) ;
+- ui/*.png : textures d'interface (rectangle arrondi plein et contour, cercle, hexagones, icônes de classe, anneau et halo d'effets) ;
 - fonts/*.fnt + .png : polices bitmap au format AngelCode (Fira Sans, repli DejaVu Sans pour ★ ● → …).
 
 Les sprites et polices sont générés en 2x pour rester nets ; le jeu les affiche à l'échelle 0.5.
@@ -23,7 +23,7 @@ SPRITE_URL = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/p
 PMD_URL = "https://raw.githubusercontent.com/PMDCollab/SpriteCollab/master/{kind}/{dex:04d}/{file}"
 # Animations PMD utilisées par le jeu ; directions gardées : 0 bas, 1 bas-droite, 2 droite, 3 haut-droite, 4 haut
 # (les directions gauches sont obtenues par symétrie à l'affichage).
-PMD_ANIMS = ["Idle", "Walk", "Attack", "Hurt", "Sleep"]
+PMD_ANIMS = ["Idle", "Walk", "Attack", "Hurt", "Sleep", "Shoot", "Charge"]
 PMD_DIRS = 5
 PMD_PAGE = 2048
 
@@ -294,7 +294,29 @@ def gen_ui():
     ImageDraw.Draw(big).line(pts + [pts[0]], fill=(255, 255, 255, 255), width=5 * s, joint="curve")
     big.resize((112, 112), Image.LANCZOS).save(os.path.join(ui, "hex_outline.png"))
     gen_role_icons(ui)
+    gen_fx(ui)
     print("ui : ok")
+
+
+def gen_fx(ui):
+    """Textures d'effets : anneau (onde de choc, bulle de bouclier) et halo doux (auras, projectiles)."""
+    import math
+    n, s = 128, 4
+    N = n * s
+    ring = Image.new("RGBA", (N, N), (0, 0, 0, 0))
+    d = ImageDraw.Draw(ring)
+    w = int(N * 0.07)
+    d.ellipse((w // 2, w // 2, N - w // 2 - 1, N - w // 2 - 1), outline=(255, 255, 255, 255), width=w)
+    ring.resize((n, n), Image.LANCZOS).save(os.path.join(ui, "ring.png"))
+    glow = Image.new("RGBA", (n, n), (0, 0, 0, 0))
+    px = glow.load()
+    c = (n - 1) / 2
+    for y in range(n):
+        for x in range(n):
+            r = math.hypot(x - c, y - c) / (n / 2)
+            a = max(0.0, 1 - r) ** 2
+            px[x, y] = (255, 255, 255, int(255 * a))
+    glow.save(os.path.join(ui, "glow.png"))
 
 
 def gen_role_icons(ui):
