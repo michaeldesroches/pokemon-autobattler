@@ -1460,7 +1460,7 @@ public final class GameView extends InputAdapter {
         });
         int opp = lobby.opponentOf(state);
         GameState foe = opp >= 0 ? lobby.players().get(opp) : null;
-        float ry = y + 30, rw = RIGHT.w - 28, rh = 42;
+        float ry = y + 28, rw = RIGHT.w - 28, rh = 38;
         int rank = 1;
         for (GameState p : order) {
             boolean me = p == state, out = p.placement != 0;
@@ -1469,24 +1469,24 @@ public final class GameView extends InputAdapter {
             g.round(x, ry, rw, rh - 4, bg);
             if (vs) g.outline(x, ry, rw, rh - 4, g.fade(ACCENT, 0.8f));
             float alpha = out ? 0.4f : 1f;
-            g.centered(bold(13), out ? Lobby.ordinal(p.placement) : String.valueOf(rank), x + 14, ry + 24, g.fade(MUTED, alpha + 0.2f));
+            g.centered(bold(13), out ? Lobby.ordinal(p.placement) : String.valueOf(rank), x + 14, ry + 22, g.fade(MUTED, alpha + 0.2f));
             Species avatar = avatar(p);
             if (avatar != null) {
                 g.alpha = alpha;
-                drawPortrait(g, avatar, x + 30, ry + 3, 32);
+                drawPortrait(g, avatar, x + 30, ry + 3, 28);
                 g.alpha = 1f;
             } else {
-                g.round(x + 30, ry + 3, 32, 32, g.fade(WHITE, 0.06f));
+                g.round(x + 30, ry + 3, 28, 28, g.fade(WHITE, 0.06f));
             }
-            g.text(bold(13), p.name, x + 70, ry + 16, g.fade(me ? GOLD : TEXT, alpha));
+            g.text(bold(13), p.name, x + 66, ry + 14, g.fade(me ? GOLD : TEXT, alpha));
             String sub = out ? "éliminé" : "niv. " + p.level + (Math.abs(p.streak) >= 2 ? " · série " + (p.streak > 0 ? "+" : "-") + Math.abs(p.streak) : "");
             if (vs) sub = (state.opponentGhost ? "fantôme · " : "ton adversaire · ") + sub;
-            g.text(regular(12), sub, x + 70, ry + 31, g.fade(vs ? ACCENT : MUTED, alpha + 0.2f));
+            g.text(regular(12), sub, x + 66, ry + 28, g.fade(vs ? ACCENT : MUTED, alpha + 0.2f));
             float bx = x + rw - 98, bw = 88;
-            g.round(bx, ry + 12, bw, 12, TRACK);
+            g.round(bx, ry + 11, bw, 12, TRACK);
             float frac = Math.max(0, p.hp) / (float) GameState.START_HP;
-            if (!out) g.round(bx, ry + 12, bw * frac, 12, frac > 0.5f ? GOOD : frac > 0.25f ? GOLD : ACCENT);
-            g.centered(bold(11), out ? "—" : String.valueOf(p.hp), bx + bw / 2, ry + 22, WHITE);
+            if (!out) g.round(bx, ry + 11, bw * frac, 12, frac > 0.5f ? GOOD : frac > 0.25f ? GOLD : ACCENT);
+            g.centered(bold(11), out ? "—" : String.valueOf(p.hp), bx + bw / 2, ry + 21, WHITE);
             ry += rh;
             if (!out) rank++;
         }
