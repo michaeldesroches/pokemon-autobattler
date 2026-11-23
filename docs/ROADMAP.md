@@ -10,7 +10,7 @@ Les estimations supposent un dev seul en soirées, environ 10 h par semaine.
 | --- | --- |
 | 0. Décision technique | ✅ Fait : libGDX 1.14 + TeaVM (gdx-teavm), desktop LWJGL3 |
 | 1. Moteur de combat façon TFT | ✅ Fait : hexagones, A*, portée, 23 capacités, statuts |
-| 2. Méta-jeu TFT | ✅ Fait : niveau/XP, pool partagé, 6 composants → 21 objets, manches sauvages (classes et carrousel reportés) |
+| 2. Méta-jeu TFT | ✅ Fait : niveau/XP, pool partagé, 6 composants → 21 objets, manches sauvages, classes (carrousel reporté) |
 | 3. Visuel 3/4 | ✅ Fait : plateau en perspective, sprites animés PMD, particules, sons, interface 16:9 |
 | 4. Lobby à 8 joueurs | À faire (prochaine étape : 7 bots) |
 | 5. Contenu et équilibrage | En continu |
@@ -39,7 +39,7 @@ Plan initial :
 
 ## Étape 2 : méta-jeu TFT (2 à 3 semaines) — fait
 
-Ce qui a été livré : niveau 3 à 9 (XP achetée 4 or pour 4 XP, +2 XP par manche) qui fixe la taille de l'équipe et les chances de tier ; pool partagé (18 / 14 / 10 exemplaires par Pokémon de base selon le tier, rendus à la revente) ; 6 composants (Bandeau Muscle, Lunettes Sages, Vive Griffe, Plaque Fer, Baie Oran, Encens Mer) qui se combinent en 21 objets (Orbe Vie, Griffe Rasoir, Casque Brut, Restes, Ceinture Force…), 3 par Pokémon ; manches contre des Pokémon sauvages (2, 6, 10, 14…) qui donnent des composants. Reportés : les classes (Starter, etc.) et le carrousel.
+Ce qui a été livré : niveau 3 à 9 (XP achetée 4 or pour 4 XP, +2 XP par manche) qui fixe la taille de l'équipe et les chances de tier ; pool partagé (18 / 14 / 10 exemplaires par Pokémon de base selon le tier, rendus à la revente) ; 6 composants (Bandeau Muscle, Lunettes Sages, Vive Griffe, Plaque Fer, Baie Oran, Encens Mer) qui se combinent en 21 objets (Orbe Vie, Griffe Rasoir, Casque Brut, Restes, Ceinture Force…), 3 par Pokémon ; manches contre des Pokémon sauvages (2, 6, 10, 14…) qui donnent des composants. Reporté : le carrousel. Les classes ont été ajoutées ensuite (voir plus bas).
 
 Plan initial :
 
@@ -48,6 +48,12 @@ Plan initial :
 - **Les objets** : des composants qui se combinent à deux, avec environ 8 composants et 36 objets possibles. Thème Pokémon : Restes, Mouchoir Choix, Orbe Vie.
 - Des manches contre des Pokémon sauvages qui donnent des objets, et éventuellement un carrousel.
 - Des synergies refaites autour des types, plus des « classes » (Starter, Légendaire, Fossile) pour multiplier les combinaisons.
+
+### Ajout : classes de rôle — fait
+
+Chaque lignée a une classe de rôle (Gardien, Combattant, Assassin, Mystique, Tireur), et les 4 starters ont en plus la classe Starter. Les classes ont des paliers comme les types (2/4 ou 2/3) et un bonus lié au rôle : bouclier de départ, vol de vie, saut sur l'arrière-ligne avec critiques, puissance des capacités, vitesse d'attaque et portée. Objectif : lire une équipe d'un coup d'œil. Icône de classe sur chaque Pokémon (plateau, banc, boutique, combat), panneau de synergies classes + types, contour orange quand un Pokémon est mal placé, placement automatique des adversaires selon le rôle. Légendaire et Fossile attendront l'élargissement du Pokédex.
+
+Pour que chaque classe ait des représentants évidents, le Pokédex est sorti de la 1re génération : 8 lignées ajoutées (Galekid, Riolu, Griknot, Farfuret, Absol, Tarsal, Rémoraid, Brindibou, chacune avec sa capacité) et 3 évolutions apparues plus tard (Steelix, Cizayox, Magnézone), soit 31 lignées et 76 espèces. Nouveau type Ténèbres (palier 2 : coups critiques) ; l'Acier, devenu fréquent, passe aux paliers 2/3. Effet de bord : la boutique est plus diluée, les fusions arrivent plus tard (bot naïf : manche moyenne 9,9 au lieu de 10,2).
 
 ## Étape 3 : visuel 3/4 (2 à 3 semaines) — fait
 

@@ -17,7 +17,8 @@ public enum PType {
     ROCK("Roche", 0xB8A038, "Lame de Roc"),
     GHOST("Spectre", 0x705898, "Ball'Ombre"),
     DRAGON("Dragon", 0x7038F8, "Colère"),
-    STEEL("Acier", 0xB8B8D0, "Tête de Fer");
+    STEEL("Acier", 0xB8B8D0, "Tête de Fer"),
+    DARK("Ténèbres", 0x705848, "Mâchouille");
 
     public final String label;
     /** Couleur officielle du type, en 0xRRGGBB. */
@@ -30,7 +31,7 @@ public enum PType {
         this.move = move;
     }
 
-    private static final double[][] CHART = new double[16][16];
+    private static final double[][] CHART = new double[values().length][values().length];
 
     static {
         for (double[] row : CHART) java.util.Arrays.fill(row, 1.0);
@@ -40,16 +41,17 @@ public enum PType {
         set(ELECTRIC, 0.5, ELECTRIC, GRASS, DRAGON); set(ELECTRIC, 2, WATER, FLYING); set(ELECTRIC, 0, GROUND);
         set(GRASS, 0.5, FIRE, GRASS, POISON, FLYING, BUG, DRAGON, STEEL); set(GRASS, 2, WATER, GROUND, ROCK);
         set(ICE, 0.5, FIRE, WATER, ICE, STEEL); set(ICE, 2, GRASS, GROUND, FLYING, DRAGON);
-        set(FIGHTING, 0.5, POISON, FLYING, PSYCHIC, BUG); set(FIGHTING, 2, NORMAL, ICE, ROCK, STEEL); set(FIGHTING, 0, GHOST);
+        set(FIGHTING, 0.5, POISON, FLYING, PSYCHIC, BUG); set(FIGHTING, 2, NORMAL, ICE, ROCK, STEEL, DARK); set(FIGHTING, 0, GHOST);
         set(POISON, 0.5, POISON, GROUND, ROCK, GHOST); set(POISON, 2, GRASS); set(POISON, 0, STEEL);
         set(GROUND, 0.5, GRASS, BUG); set(GROUND, 2, FIRE, ELECTRIC, POISON, ROCK, STEEL); set(GROUND, 0, FLYING);
         set(FLYING, 0.5, ELECTRIC, ROCK, STEEL); set(FLYING, 2, GRASS, FIGHTING, BUG);
-        set(PSYCHIC, 0.5, PSYCHIC, STEEL); set(PSYCHIC, 2, FIGHTING, POISON);
-        set(BUG, 0.5, FIRE, FIGHTING, POISON, FLYING, GHOST, STEEL); set(BUG, 2, GRASS, PSYCHIC);
+        set(PSYCHIC, 0.5, PSYCHIC, STEEL); set(PSYCHIC, 2, FIGHTING, POISON); set(PSYCHIC, 0, DARK);
+        set(BUG, 0.5, FIRE, FIGHTING, POISON, FLYING, GHOST, STEEL); set(BUG, 2, GRASS, PSYCHIC, DARK);
         set(ROCK, 0.5, FIGHTING, GROUND, STEEL); set(ROCK, 2, FIRE, ICE, FLYING, BUG);
-        set(GHOST, 0, NORMAL); set(GHOST, 2, PSYCHIC, GHOST);
+        set(GHOST, 0, NORMAL); set(GHOST, 2, PSYCHIC, GHOST); set(GHOST, 0.5, DARK);
         set(DRAGON, 0.5, STEEL); set(DRAGON, 2, DRAGON);
         set(STEEL, 0.5, FIRE, WATER, ELECTRIC, STEEL); set(STEEL, 2, ICE, ROCK);
+        set(DARK, 0.5, FIGHTING, DARK, STEEL); set(DARK, 2, PSYCHIC, GHOST);
     }
 
     private static void set(PType atk, double mult, PType... defs) {

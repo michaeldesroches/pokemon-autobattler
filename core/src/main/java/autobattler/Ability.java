@@ -28,7 +28,15 @@ public enum Ability {
     TRANCHE("Tranche", "Fauche la cible et les ennemis adjacents : 180% de dégâts.", 70, 10),
     BLIZZARD("Blizzard", "130% de dégâts autour de la cible et gel 1 s.", 100, 40),
     REPOS("Repos", "Récupère 30% de ses PV max.", 90, 30),
-    OURAGAN("Ouragan", "200% de dégâts à la cible et à ses voisins.", 90, 20);
+    OURAGAN("Ouragan", "200% de dégâts à la cible et à ses voisins.", 90, 20),
+    TETE_DE_FER("Tête de Fer", "160% de dégâts, étourdit 1,5 s, bouclier de 20% PV.", 80, 30),
+    VOEU("Vœu", "Soigne l'allié le plus blessé de 20% de ses PV max, 150% de dégâts à la cible.", 80, 20),
+    OCTAZOOKA("Octazooka", "200% de dégâts et paralyse la cible 2 s.", 70, 10),
+    TISSE_OMBRE("Tisse Ombre", "Flèche : 230% de dégâts, la cible est clouée sur place 1,5 s.", 80, 20),
+    AURASPHERE("Aurasphère", "240% de dégâts, se soigne de 15% de ses PV max.", 70, 10),
+    COUP_BAS("Coup Bas", "180% de dégâts, 320% si la cible a moins de la moitié de ses PV.", 60, 10),
+    TRANCHE_NUIT("Tranche-Nuit", "Coup critique assuré : 200% de dégâts à la cible et aux ennemis adjacents.", 80, 20),
+    SEISME("Séisme", "150% de dégâts à tous les ennemis à 2 cases.", 90, 30);
 
     public final String label;
     public final String description;

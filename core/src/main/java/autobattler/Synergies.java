@@ -15,9 +15,9 @@ public final class Synergies {
     /** Paliers (nombre de lignées distinctes) pour chaque type. */
     public static int[] thresholds(PType t) {
         switch (t) {
-            case NORMAL: case FIRE: case POISON: case GROUND: case FLYING: return new int[]{2, 3};
+            case NORMAL: case FIRE: case POISON: case GROUND: case FLYING: case STEEL: return new int[]{2, 3};
             case WATER: return new int[]{2, 4};
-            case PSYCHIC: case GHOST: case DRAGON: case STEEL: return new int[]{1};
+            case PSYCHIC: case GHOST: case DRAGON: return new int[]{1};
             default: return new int[]{2};
         }
     }
@@ -39,7 +39,8 @@ public final class Synergies {
             case ROCK: return "+35% Défense";
             case GHOST: return "20% d'esquive, vise le plus faible";
             case DRAGON: return "+25% PV et Attaque";
-            case STEEL: return "+30% Défense";
+            case STEEL: return level >= 2 ? "+50% Défense" : "+30% Défense";
+            case DARK: return "25% de coups critiques";
             default: return "";
         }
     }
@@ -68,6 +69,35 @@ public final class Synergies {
         for (Map.Entry<PType, Integer> e : counts(units).entrySet()) {
             int lvl = 0;
             for (int th : thresholds(e.getKey())) if (e.getValue() >= th) lvl++;
+            if (lvl > 0) res.put(e.getKey(), lvl);
+        }
+        return res;
+    }
+
+    /** Nombre de lignées distinctes par classe. */
+    public static Map<Trait, Integer> traitCounts(List<Unit> units) {
+        Map<Trait, Set<String>> lines = new EnumMap<Trait, Set<String>>(Trait.class);
+        for (Unit u : units) {
+            for (Trait t : u.species.traits()) {
+                Set<String> s = lines.get(t);
+                if (s == null) {
+                    s = new HashSet<String>();
+                    lines.put(t, s);
+                }
+                s.add(u.species.line);
+            }
+        }
+        Map<Trait, Integer> res = new EnumMap<Trait, Integer>(Trait.class);
+        for (Map.Entry<Trait, Set<String>> e : lines.entrySet()) res.put(e.getKey(), e.getValue().size());
+        return res;
+    }
+
+    /** Niveau de synergie actif (0 = inactif) pour chaque classe. */
+    public static Map<Trait, Integer> traitLevels(List<Unit> units) {
+        Map<Trait, Integer> res = new EnumMap<Trait, Integer>(Trait.class);
+        for (Map.Entry<Trait, Integer> e : traitCounts(units).entrySet()) {
+            int lvl = 0;
+            for (int th : e.getKey().thresholds()) if (e.getValue() >= th) lvl++;
             if (lvl > 0) res.put(e.getKey(), lvl);
         }
         return res;

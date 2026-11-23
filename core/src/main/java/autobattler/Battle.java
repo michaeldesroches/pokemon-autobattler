@@ -16,6 +16,8 @@ public final class Battle {
     public static final double DAMAGE_BASE = 22;
     /** Prolongation : au-delà de ce temps, les dégâts augmentent de 20% par seconde (x2 à 35 s, x4 à 45 s). */
     public static final double OVERTIME = 30;
+    /** Durée des boucliers de début de combat (Gilet Assaut, classe Gardien). */
+    public static final double START_SHIELD_TIME = 5;
 
     public enum Kind { ATTACK, DODGE, FAINT, STATUS, ABILITY, AREA, HEAL }
 
@@ -62,10 +64,32 @@ public final class Battle {
             occupied[f.cell] = true;
             if (f.startShield > 0) {
                 f.shield = f.startShield * f.maxHp;
-                f.shieldTime = 6;
+                f.shieldTime = START_SHIELD_TIME;
+            }
+        }
+        // Classe Assassin : saut sur l'arrière-ligne adverse au tout début du combat
+        for (Fighter f : fighters) {
+            if (!f.leapsAtStart) continue;
+            Fighter best = null;
+            for (Fighter o : fighters) {
+                if (!o.alive || o.player == f.player) continue;
+                if (best == null || depth(o) > depth(best)
+                        || (depth(o) == depth(best) && Math.abs(Hex.col(o.cell) - Hex.col(f.cell)) < Math.abs(Hex.col(best.cell) - Hex.col(f.cell)))) {
+                    best = o;
+                }
+            }
+            if (best != null && dashNextTo(f, best)) {
+                f.moveDur = f.moveT = 0.5;
+                f.target = best;
             }
         }
         checkEnd();
+    }
+
+    /** Profondeur d'un combattant dans son propre camp (0 = première ligne, 3 = fond). */
+    private static int depth(Fighter f) {
+        int r = Hex.row(f.cell);
+        return f.player ? r - Hex.SIDE_ROWS : Hex.SIDE_ROWS - 1 - r;
     }
 
     public double time() {
@@ -395,6 +419,50 @@ public final class Battle {
             case OURAGAN:
                 for (Fighter o : enemiesWithin(f, t.cell, 1)) hit(f, o, 2.0, true);
                 events.add(new Event(Kind.AREA, f, t, 0, 1, true, null, t.cell, 1, PType.DRAGON));
+                break;
+            case TETE_DE_FER:
+                hit(f, t, 1.6, true);
+                stun(t, 1.5, "Étourdi");
+                addShield(f, 0.20 * f.maxHp, 3);
+                break;
+            case VOEU: {
+                Fighter hurt = null;
+                for (Fighter o : fighters) {
+                    if (!o.alive || o.player != f.player) continue;
+                    if (hurt == null || o.hp / o.maxHp < hurt.hp / hurt.maxHp) hurt = o;
+                }
+                if (hurt != null) heal(hurt, 0.20 * hurt.maxHp, true);
+                hit(f, t, 1.5, true);
+                break;
+            }
+            case OCTAZOOKA:
+                hit(f, t, 2.0, true);
+                paralyze(t, 2);
+                break;
+            case TISSE_OMBRE:
+                hit(f, t, 2.3, true);
+                stun(t, 1.5, "Cloué");
+                break;
+            case AURASPHERE:
+                hit(f, t, 2.4, true);
+                heal(f, 0.15 * f.maxHp, true);
+                break;
+            case COUP_BAS:
+                hit(f, t, t.hp < 0.5 * t.maxHp ? 3.2 : 1.8, true);
+                break;
+            case TRANCHE_NUIT: {
+                double crit = f.critChance;
+                f.critChance = 1;
+                for (Fighter o : enemiesWithin(f, t.cell, 1)) {
+                    if (Hex.distance(f.cell, o.cell) <= 2) hit(f, o, 2.0, true);
+                }
+                f.critChance = crit;
+                events.add(new Event(Kind.AREA, f, t, 0, 1, true, null, t.cell, 1, PType.DARK));
+                break;
+            }
+            case SEISME:
+                for (Fighter o : enemiesWithin(f, f.cell, 2)) hit(f, o, 1.5, true);
+                events.add(new Event(Kind.AREA, f, t, 0, 1, true, null, f.cell, 2, PType.GROUND));
                 break;
             default:
                 hit(f, t, 2.5, true);

@@ -1,6 +1,6 @@
 # Pokémon Auto Battler
 
-Auto battler façon TFT / Super Auto Pets avec des Pokémon de 1re génération, écrit en **Java** avec **[libGDX](https://libgdx.com/)**. Jouable sur desktop et **dans le navigateur** grâce à [gdx-teavm](https://github.com/xpenatan/gdx-teavm) (Java compilé en JavaScript par TeaVM).
+Auto battler façon TFT / Super Auto Pets avec des Pokémon de 1re génération (plus quelques Pokémon des générations suivantes choisis pour leur rôle), écrit en **Java** avec **[libGDX](https://libgdx.com/)**. Jouable sur desktop et **dans le navigateur** grâce à [gdx-teavm](https://github.com/xpenatan/gdx-teavm) (Java compilé en JavaScript par TeaVM).
 
 **Jouer en ligne :** https://pokemon-autobattler.michael-desroches-perso.workers.dev (accès réservé via Cloudflare Access, voir [docs/DEPLOIEMENT-CLOUDFLARE.md](docs/DEPLOIEMENT-CLOUDFLARE.md))
 
@@ -15,7 +15,7 @@ Auto battler façon TFT / Super Auto Pets avec des Pokémon de 1re génération,
 
 - Chaque manche : achète des Pokémon dans la boutique (coût 1 à 3 selon le tier), place-les sur ton camp du **plateau hexagonal** (4 lignes × 7 cases), puis lance le combat. Le combat est automatique.
 - Au combat, chaque Pokémon **vise l'ennemi le plus proche**, s'en approche (recherche de chemin A*) jusqu'à être à portée, puis attaque. La **portée** dépend de la lignée : 1 case pour le corps à corps, 2 à 4 cases pour les attaquants à distance. Les Spectre visent toujours l'ennemi le plus affaibli.
-- **Mana** : +10 par attaque, +5 par coup reçu. Mana plein → **capacité unique** de la lignée (23 capacités : Giga-Sangsue, Lance-Flammes, Provoc, Tonnerre, Psyko, Blizzard…). Survole un Pokémon pour voir la sienne.
+- **Mana** : +10 par attaque, +5 par coup reçu. Mana plein → **capacité unique** de la lignée (31 capacités : Giga-Sangsue, Lance-Flammes, Provoc, Tonnerre, Psyko, Blizzard, Séisme, Tisse Ombre…). Survole un Pokémon pour voir la sienne.
 - **Statuts** : brûlure (dégâts dans le temps, soins réduits de moitié), poison, gel, sommeil (rompu par les dégâts), paralysie (attaque 40 % plus lente), hâte, provocation, bouclier.
 - **Prolongation** : après 30 s de combat, les dégâts augmentent de 20 % par seconde. Au bout de 45 s, le combat est perdu.
 - **3 exemplaires identiques fusionnent** : évolution (Bulbizarre → Herbizarre → Florizarre) ou étoile supplémentaire pour les formes finales (jusqu'à 3★).
@@ -26,6 +26,19 @@ Auto battler façon TFT / Super Auto Pets avec des Pokémon de 1re génération,
 - **Économie** : +5 or par manche, +1 par tranche de 10 or (max +5), +1 en cas de victoire, +1 en série de 3+. Relancer la boutique coûte 1 or. Vendre rembourse ce que tu as investi (et rend ses objets).
 - **Défaite** : tu perds `manche + 2 × Pokémon adverses survivants` PV (60 PV au départ).
 - La **table des types** s'applique (les immunités sont adoucies à x0.25).
+- **Pokémon des générations suivantes** : quelques lignées choisies parce qu'elles incarnent un rôle (Galekid, Riolu, Griknot, Farfuret, Absol, Tarsal, Rémoraid, Brindibou), et des évolutions apparues plus tard (Onix → Steelix, Insécateur → Cizayox, Magnéton → Magnézone). Le type Ténèbres arrive avec elles (sans le type Fée : Gardevoir reste Psy).
+- **Classes** : chaque lignée a un rôle (Gardien, Combattant, Assassin, Mystique, Tireur), affiché par une icône de couleur sur le plateau, le banc et la boutique. Les Gardiens et Combattants vont devant, les Mystiques et Tireurs derrière ; un contour orange signale un Pokémon mal placé. À partir de 2 Assassins, ils sautent sur l'arrière-ligne adverse au début du combat.
+
+### Classes (lignées distinctes d'une même classe sur le plateau)
+
+| Classe | Lignées | Palier | Bonus (pour les Pokémon de la classe) |
+|---|---|---|---|
+| Gardien | Carapuce, Racaillou, Onix (→ Steelix), Ronflex, Otaria, Galekid | 2 / 4 | Bouclier de 20 % / 35 % PV pendant 5 s au début |
+| Combattant | Machoc, Osselait, Caninos, Minidraco, Riolu, Griknot | 2 / 4 | +15 % / +30 % PV, vol de vie 10 % / 20 % |
+| Assassin | Fantominus, Roucool, Rattata, Insécateur (→ Cizayox), Farfuret, Absol | 2 / 3 | Saut sur l'arrière-ligne au début, 30 % / 50 % de critique, +15 % / +30 % dégâts |
+| Mystique | Abra, Magnéti (→ Magnézone), Lokhlass, Mystherbe, Goupix, Ptitard, Tarsal | 2 / 4 | +35 % / +70 % puissance des capacités, +20 mana au départ |
+| Tireur | Pikachu, Salamèche, Chenipan, Bulbizarre, Rémoraid, Brindibou | 2 / 3 | +20 % / +30 % vitesse d'attaque (et +1 portée au 2e palier) |
+| Starter | Bulbizarre, Salamèche, Carapuce, Pikachu, Brindibou | 3 | +20 % PV et Attaque |
 
 ### Synergies (lignées distinctes d'un même type sur le plateau)
 
@@ -45,7 +58,8 @@ Auto battler façon TFT / Super Auto Pets avec des Pokémon de 1re génération,
 | Psy | 1 | +30 mana au départ |
 | Spectre | 1 | 20 % d'esquive |
 | Dragon | 1 | +25 % PV et Attaque |
-| Acier | 1 | +30 % Défense |
+| Acier | 2 / 3 | +30 % / +50 % Défense |
+| Ténèbres | 2 | 25 % de coups critiques |
 
 ## Développement
 

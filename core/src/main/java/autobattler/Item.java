@@ -75,7 +75,7 @@ public final class Item {
         combine(BANDEAU, ENCENS, "Bandeau Choix", "BC", "Les attaques rendent 5 mana de plus.", Effect.MANA_ON_HIT, 5);
         combine(LUNETTES, LUNETTES, "Lunettes Choix", "LC", "Puissance des capacités +30% (en plus).", Effect.ABILITY_AMP, 0.30);
         combine(LUNETTES, VIVE_GRIFFE, "Métronome", "ME", "Chaque capacité lancée : +12% puissance des capacités.", Effect.ABILITY_STACK, 0.12);
-        combine(LUNETTES, PLAQUE, "Gilet Assaut", "GA", "Bouclier de 30% des PV pendant 6 s au début du combat.", Effect.SHIELD_START, 0.30);
+        combine(LUNETTES, PLAQUE, "Gilet Assaut", "GA", "Bouclier de 30% des PV pendant 5 s au début du combat.", Effect.SHIELD_START, 0.30);
         combine(LUNETTES, BAIE, "Baie Sitrus", "BS", "Une fois sous 50% PV : soigne 35% des PV max.", Effect.SITRUS, 0.35);
         combine(LUNETTES, ENCENS, "Perle Lustrée", "PL", "Après une capacité, récupère 30 mana.", Effect.MANA_REFUND, 30);
         combine(VIVE_GRIFFE, VIVE_GRIFFE, "Poudre Vite", "PV", "+30% vitesse d'attaque (en plus).", Effect.ATTACK_SPEED, 0.30);

@@ -2,7 +2,7 @@
 """Génère les assets du jeu dans assets/ :
 
 - sprites.png + sprites.txt : atlas des sprites PokéAPI (face et dos), marges transparentes rognées ;
-- ui/*.png : textures d'interface (rectangle arrondi plein et contour, cercle) ;
+- ui/*.png : textures d'interface (rectangle arrondi plein et contour, cercle, hexagones, icônes de classe) ;
 - fonts/*.fnt + .png : polices bitmap au format AngelCode (Fira Sans, repli DejaVu Sans pour ★ ● → …).
 
 Les sprites et polices sont générés en 2x pour rester nets ; le jeu les affiche à l'échelle 0.5.
@@ -293,7 +293,77 @@ def gen_ui():
     big = Image.new("RGBA", (n, n), (0, 0, 0, 0))
     ImageDraw.Draw(big).line(pts + [pts[0]], fill=(255, 255, 255, 255), width=5 * s, joint="curve")
     big.resize((112, 112), Image.LANCZOS).save(os.path.join(ui, "hex_outline.png"))
+    gen_role_icons(ui)
     print("ui : ok")
+
+
+def gen_role_icons(ui):
+    """Icônes de classe (blanches, teintées à l'affichage), 6 cases de 64x64 dans l'ordre de Trait :
+    Gardien (bouclier), Combattant (poing/épée), Assassin (dague), Mystique (étincelle), Tireur (cible), Starter (étoile)."""
+    import math
+    s, n = 4, 64
+    N = n * s
+    W = (255, 255, 255, 255)
+    strip = Image.new("RGBA", (n * 6, n), (0, 0, 0, 0))
+
+    def canvas():
+        im = Image.new("RGBA", (N, N), (0, 0, 0, 0))
+        return im, ImageDraw.Draw(im)
+
+    def P(*pts):
+        return [(x * N, y * N) for x, y in pts]
+
+    icons = []
+    # Gardien : bouclier
+    im, d = canvas()
+    d.polygon(P((.16, .14), (.5, .06), (.84, .14), (.84, .48), (.5, .94), (.16, .48)), fill=W)
+    icons.append(im)
+    # Combattant : épée
+    im, d = canvas()
+    d.polygon(P((.44, .62), (.44, .16), (.5, .05), (.56, .16), (.56, .62)), fill=W)
+    d.rectangle(P((.24, .62), (.76, .71)), fill=W)
+    d.rectangle(P((.45, .71), (.55, .88)), fill=W)
+    d.ellipse(P((.40, .86), (.60, .98)), fill=W)
+    icons.append(im)
+    # Assassin : dague courbe (croissant) + lame
+    im, d = canvas()
+    d.polygon(P((.80, .08), (.62, .50), (.46, .60), (.40, .54), (.52, .40)), fill=W)
+    d.line(P((.30, .52), (.56, .78)), fill=W, width=int(.08 * N))
+    d.line(P((.42, .66), (.18, .90)), fill=W, width=int(.11 * N))
+    icons.append(im)
+    # Mystique : étincelle à 4 branches + petite
+    im, d = canvas()
+    def sparkle(cx, cy, R, r):
+        pts = []
+        for k in range(8):
+            a = math.radians(90 + 45 * k)
+            rr = R if k % 2 == 0 else r
+            pts.append((cx + rr * math.cos(a), cy - rr * math.sin(a)))
+        return [(x * N, y * N) for x, y in pts]
+    d.polygon(sparkle(.44, .54, .40, .10), fill=W)
+    d.polygon(sparkle(.80, .20, .16, .045), fill=W)
+    icons.append(im)
+    # Tireur : cible
+    im, d = canvas()
+    w = int(.09 * N)
+    d.ellipse(P((.14, .14), (.86, .86)), outline=W, width=w)
+    d.ellipse(P((.38, .38), (.62, .62)), fill=W)
+    for a, b in (((.5, .02), (.5, .26)), ((.5, .74), (.5, .98)), ((.02, .5), (.26, .5)), ((.74, .5), (.98, .5))):
+        d.line(P(a, b), fill=W, width=w)
+    icons.append(im)
+    # Starter : étoile à 5 branches
+    im, d = canvas()
+    pts = []
+    for k in range(10):
+        a = math.radians(90 + 36 * k)
+        rr = .46 if k % 2 == 0 else .19
+        pts.append((.5 + rr * math.cos(a), .54 - rr * math.sin(a)))
+    d.polygon(P(*pts), fill=W)
+    icons.append(im)
+
+    for i, im in enumerate(icons):
+        strip.paste(im.resize((n, n), Image.LANCZOS), (i * n, 0))
+    strip.save(os.path.join(ui, "roles.png"))
 
 
 def gen_font(name, file, size):

@@ -40,6 +40,16 @@ public final class Species {
         return Pokedex.range(line);
     }
 
+    /** Classe de combat (rôle) de la lignée. */
+    public Trait role() {
+        return Pokedex.role(line);
+    }
+
+    /** Classes de l'espèce : son rôle, plus Starter le cas échéant. */
+    public Trait[] traits() {
+        return Pokedex.isStarter(line) ? new Trait[]{role(), Trait.STARTER} : new Trait[]{role()};
+    }
+
     public Ability ability() {
         return Pokedex.ability(line);
     }

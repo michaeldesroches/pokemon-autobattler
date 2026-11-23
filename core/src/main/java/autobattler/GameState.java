@@ -413,8 +413,9 @@ public final class GameState {
         List<Unit> units = new ArrayList<Unit>();
         for (Placed p : team) units.add(p.unit);
         Map<PType, Integer> syn = Synergies.levels(units);
+        Map<Trait, Integer> traits = Synergies.traitLevels(units);
         List<Fighter> res = new ArrayList<Fighter>();
-        for (Placed p : team) res.add(new Fighter(p.unit, player, p.row, p.col, syn));
+        for (Placed p : team) res.add(new Fighter(p.unit, player, p.row, p.col, syn, traits));
         return res;
     }
 
@@ -555,7 +556,8 @@ public final class GameState {
         int[] centerOrder = {3, 2, 4, 1, 5, 0, 6};
         for (Unit u : units) {
             int range = u.species.range();
-            int preferred = range <= 1 ? 0 : range == 2 ? 2 : 3;
+            Trait role = u.species.role();
+            int preferred = role.frontline ? 0 : role == Trait.ASSASSIN ? 3 : range <= 2 ? 2 : 3;
             boolean placed = false;
             for (int dr = 0; dr < ROWS && !placed; dr++) {
                 int row = preferred + (preferred == 0 ? dr : -dr);
