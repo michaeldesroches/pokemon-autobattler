@@ -64,18 +64,18 @@ public final class Bot {
             double bestScore = -1;
             for (int i = 0; i < GameState.SHOP; i++) {
                 Species sp = s.shop[i];
-                if (sp == null || sp.tier > s.gold) continue;
+                if (sp == null || sp.cost() > s.gold) continue;
                 int owned = 0;
                 for (int slot = 0; slot < GameState.BENCH; slot++) if (s.bench[slot] != null && s.bench[slot].species == sp) owned++;
                 for (Unit u : s.boardUnits()) if (u.species == sp) owned++;
-                double score = sp.tier + owned * 3 + affinity(sp);
+                double score = sp.cost() + owned * 3 + affinity(sp);
                 if (owned == 0 && countAll(s) >= s.maxUnits() + 3) continue;
                 if (score > bestScore) {
                     bestScore = score;
                     best = i;
                 }
             }
-            if (best >= 0 && s.gold - s.shop[best].tier >= (s.round >= 5 ? savings : 0) - (bestScore >= 4 ? 99 : 0)) {
+            if (best >= 0 && s.gold - s.shop[best].cost() >= (s.round >= 5 ? savings : 0) - (bestScore >= 4 ? 99 : 0)) {
                 bought = s.buy(best);
             }
         }

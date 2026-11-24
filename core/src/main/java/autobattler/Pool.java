@@ -17,7 +17,7 @@ public final class Pool {
     /** Remet tous les exemplaires (nouvelle partie). */
     public void fill() {
         counts.clear();
-        for (int tier = 1; tier <= 3; tier++)
+        for (int tier = 1; tier <= GameState.TIERS; tier++)
             for (Species s : Pokedex.shopPool(tier)) counts.put(s, GameState.POOL_SIZE[tier - 1]);
     }
 

@@ -21,12 +21,13 @@ Auto battler façon TFT / Super Auto Pets avec des Pokémon de 1re génération 
 - **Prolongation** : après 30 s de combat, les dégâts augmentent de 20 % par seconde. Au bout de 45 s, le combat est perdu.
 - **3 exemplaires identiques fusionnent** : évolution (Bulbizarre → Herbizarre → Florizarre) ou étoile supplémentaire pour les formes finales (jusqu'à 3★).
 - **Niveau** (3 à 9) = nombre max de Pokémon sur le plateau. +2 XP par manche, ou achète 4 XP pour 4 or. Le niveau augmente aussi les chances de voir des Pokémon de tier 2 et 3 en boutique.
-- **Pool partagé** entre les 8 joueurs : chaque Pokémon de base existe en un nombre limité d'exemplaires (18 / 14 / 10 selon le tier). Ce que les bots achètent ne sort plus dans ta boutique ; les Pokémon reviennent au pool à la revente ou quand un joueur est éliminé.
+- **Pool partagé** entre les 8 joueurs : chaque Pokémon de base existe en un nombre limité d'exemplaires (18 / 14 / 10 selon le tier, 4 pour les légendaires). Ce que les bots achètent ne sort plus dans ta boutique ; les Pokémon reviennent au pool à la revente ou quand un joueur est éliminé.
 - **Objets** : 6 composants (Bandeau Muscle, Lunettes Sages, Vive Griffe, Plaque Fer, Baie Oran, Encens Mer). Glisse-les sur un Pokémon (3 objets max) ; deux composants sur le même Pokémon se combinent en l'un des 21 objets (Orbe Vie, Griffe Rasoir, Casque Brut, Grelot Coque, Restes, Ceinture Force…). Survole un objet pour voir ses recettes.
 - **Pokémon sauvages** : les manches 2, 6, 10, 14… opposent des Pokémon sauvages ; elles rapportent des composants (2 à 3 en cas de victoire, 1 sinon) et coûtent moins de PV en cas de défaite.
 - **Économie** : +5 or par manche, +1 par tranche de 10 or (max +5), +1 en cas de victoire, +1 en série de 3+. Relancer la boutique coûte 1 or. Vendre rembourse ce que tu as investi (et rend ses objets).
 - **Défaite** : tu perds `2 + manche / 2 + Pokémon adverses survivants` PV (60 PV au départ, moitié moins contre les sauvages). Au temps limite, les deux joueurs perdent.
 - La **table des types** s'applique (les immunités sont adoucies à x0.25).
+- **Légendaires** (tier 4, 5 or, à partir du niveau 7 : 5 / 10 / 20 % aux niveaux 7 / 8 / 9) : Artikodin (Gardien, Grand Froid), Électhor (Tireur, Fatal-Foudre), Sulfura (Mystique, Déflagration), Mewtwo (Mystique, Frappe Psy), Rayquaza (Combattant, Draco Ascension), Darkrai (Assassin, Trou Noir). 4 exemplaires chacun, pas d'évolution, stats renforcées : un légendaire 1★ vaut un tier 3 évolué 2★.
 - **Pokémon des générations suivantes** : quelques lignées choisies parce qu'elles incarnent un rôle (Galekid, Obalie, Riolu, Griknot, Farfuret, Absol, Étourmi, Tarsal, Rémoraid, Larvibule, Brindibou ; les trois en plus remplacent Otaria, Roucool et Chenipan, qui collaient mal à leur classe), et des évolutions apparues plus tard (Onix → Steelix, Insécateur → Cizayox, Magnéton → Magnézone). Le type Ténèbres arrive avec elles (sans le type Fée : Gardevoir reste Psy).
 - **Classes** : chaque lignée a un rôle (Gardien, Combattant, Assassin, Mystique, Tireur), affiché par une icône de couleur sur le plateau, le banc et la boutique. Les Gardiens et Combattants vont devant, les Mystiques et Tireurs derrière ; un contour orange signale un Pokémon mal placé. À partir de 2 Assassins, ils sautent sur l'arrière-ligne adverse au début du combat.
 
@@ -40,6 +41,7 @@ Auto battler façon TFT / Super Auto Pets avec des Pokémon de 1re génération 
 | Mystique | Abra, Magnéti (→ Magnézone), Lokhlass, Mystherbe, Goupix, Tarsal | 2 / 4 | +35 % / +70 % puissance des capacités, +20 mana au départ |
 | Tireur | Pikachu, Salamèche, Larvibule, Bulbizarre, Rémoraid, Brindibou | 2 / 3 | +20 % / +30 % vitesse d'attaque (et +1 portée au 2e palier) |
 | Starter | Bulbizarre, Salamèche, Carapuce, Pikachu, Brindibou | 3 | +20 % PV et Attaque |
+| Légendaire | Artikodin, Électhor, Sulfura, Mewtwo, Rayquaza, Darkrai | 1 / 2 | **Toute l'équipe** : +10 % Attaque (et +15 % PV avec 2 légendaires) |
 
 ### Synergies (lignées distinctes d'un même type sur le plateau)
 

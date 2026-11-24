@@ -20,16 +20,29 @@ public final class GameState {
     public static final int XP_COST = 4, XP_PER_BUY = 4, XP_PER_ROUND = 2;
     public static final int MAX_INVENTORY = 10;
     /** Exemplaires de chaque Pokémon de base dans le pool partagé, par tier. */
-    public static final int[] POOL_SIZE = {18, 14, 10};
+    public static final int[] POOL_SIZE = {18, 14, 10, 4};
+    /** Nombre de tiers (le 4e = légendaires, à 5 or). */
+    public static final int TIERS = 4;
 
     /** XP nécessaire pour passer du niveau i au niveau i+1. */
     private static final int[] XP_TO_NEXT = {0, 0, 0, 4, 8, 14, 20, 30, 44, 0};
 
-    /** Probabilités (%) de tirer un tier 1, 2, 3 selon le niveau (index = niveau). */
+    /** Probabilités (%) de tirer un tier 1, 2, 3, 4 (légendaire) selon le niveau (index = niveau). */
     private static final int[][] ODDS = {
-            {100, 0, 0}, {100, 0, 0}, {100, 0, 0}, {100, 0, 0},
-            {70, 30, 0}, {50, 40, 10}, {40, 40, 20}, {30, 40, 30}, {20, 40, 40}, {15, 35, 50}
+            {100, 0, 0, 0}, {100, 0, 0, 0}, {100, 0, 0, 0}, {100, 0, 0, 0},
+            {70, 30, 0, 0}, {50, 40, 10, 0}, {40, 40, 20, 0}, {28, 40, 27, 5}, {18, 37, 35, 10}, {10, 30, 40, 20}
     };
+
+    /** Tier tiré au hasard selon les chances du niveau. */
+    private static int rollTier(int level, Random rng) {
+        int[] odds = shopOdds(level);
+        int r = rng.nextInt(100), acc = 0;
+        for (int t = 0; t < TIERS; t++) {
+            acc += odds[t];
+            if (r < acc) return t + 1;
+        }
+        return 1;
+    }
 
     public enum Phase { PREP, COMBAT, RESULT, GAMEOVER }
 
@@ -195,11 +208,10 @@ public final class GameState {
 
     /** Tirage pondéré par les exemplaires restants, selon les chances du niveau. */
     private Species drawFromPool() {
-        int[] odds = shopOdds(level);
-        int r = rng.nextInt(100), tier = 1;
-        if (r >= odds[0]) tier = r >= odds[0] + odds[1] ? 3 : 2;
-        for (int attempt = 0; attempt < 3; attempt++) {
-            int t = ((tier - 1 + attempt) % 3) + 1;
+        int tier = rollTier(level, rng);
+        // tier épuisé : on descend d'un tier (puis on repart du haut)
+        for (int attempt = 0; attempt < TIERS; attempt++) {
+            int t = ((tier - 1 - attempt + TIERS) % TIERS) + 1;
             int total = 0;
             for (Species s : Pokedex.shopPool(t)) total += poolCount(s);
             if (total == 0) continue;
@@ -213,10 +225,7 @@ public final class GameState {
     }
 
     private static Species randomSpecies(int level, Random rng) {
-        int[] odds = shopOdds(level);
-        int r = rng.nextInt(100), tier = 1;
-        if (r >= odds[0]) tier = r >= odds[0] + odds[1] ? 3 : 2;
-        List<Species> p = Pokedex.shopPool(tier);
+        List<Species> p = Pokedex.shopPool(rollTier(level, rng));
         return p.get(rng.nextInt(p.size()));
     }
 
@@ -284,8 +293,8 @@ public final class GameState {
     public boolean buy(int i) {
         if (phase != Phase.PREP || shop[i] == null) return false;
         Species sp = shop[i];
-        if (gold < sp.tier) {
-            message = "Pas assez d'or (" + sp.tier + " requis).";
+        if (gold < sp.cost()) {
+            message = "Pas assez d'or (" + sp.cost() + " requis).";
             return false;
         }
         if (poolCount(sp) <= 0) {
@@ -305,18 +314,18 @@ public final class GameState {
                 message = "Banc plein ! Vends un Pokémon (clic droit).";
                 return false;
             }
-            gold -= sp.tier;
+            gold -= sp.cost();
             pool.take(sp);
             shop[i] = null;
-            Unit bought = new Unit(sp, 1, sp.tier);
+            Unit bought = new Unit(sp, 1, sp.cost());
             mergeInto(same.get(0), get(same.get(0)), get(same.get(1)), bought, same.get(1), -1);
             checkMerges();
             return true;
         }
-        gold -= sp.tier;
+        gold -= sp.cost();
         pool.take(sp);
         shop[i] = null;
-        bench[free] = new Unit(sp, 1, sp.tier);
+        bench[free] = new Unit(sp, 1, sp.cost());
         message = sp.name + " rejoint ton équipe.";
         checkMerges();
         return true;
@@ -556,7 +565,7 @@ public final class GameState {
         double itemChance = Math.min(0.5, (round - 4) * 0.05);
         for (int i = 0; i < n; i++) {
             Species sp = randomSpecies(lvl, rng);
-            Unit u = new Unit(sp, 1, sp.tier);
+            Unit u = new Unit(sp, 1, sp.cost());
             int steps = round <= 2 ? 0 : Math.max(0, Math.min(3, (int) Math.floor(base + rng.nextDouble())));
             for (int k = 0; k < steps; k++) {
                 Unit m = u.merged();
@@ -577,7 +586,7 @@ public final class GameState {
         List<Unit> units = new ArrayList<Unit>();
         for (int i = 0; i < n; i++) {
             Species sp = randomSpecies(lvl, rng);
-            Unit u = new Unit(sp, 1, sp.tier);
+            Unit u = new Unit(sp, 1, sp.cost());
             int steps = Math.max(0, Math.min(3, (int) Math.floor(base + rng.nextDouble())));
             for (int k = 0; k < steps; k++) {
                 Unit m = u.merged();

@@ -17,6 +17,8 @@ public final class Pokedex {
     private static final Map<String, Trait> ROLE = new java.util.HashMap<String, Trait>();
     private static final java.util.Set<String> STARTERS = new java.util.HashSet<String>(
             java.util.Arrays.asList("bulbi", "sala", "cara", "pika", "brin"));
+    private static final java.util.Set<String> LEGENDARIES = new java.util.HashSet<String>(
+            java.util.Arrays.asList("arti", "elec", "sulf", "mewt", "rayq", "dark"));
 
     static {
         // --- Tier 1 (coût 1) ---
@@ -105,7 +107,21 @@ public final class Pokedex {
         add("carmache", "Carmache", 444, 3, "grik", 68, 90, 60, 82, "carchacrok", DRAGON, GROUND);
         add("carchacrok", "Carchacrok", 445, 3, "grik", 108, 130, 90, 102, null, DRAGON, GROUND);
 
+        // --- Tier 4 : légendaires (coût 5, 4 exemplaires, pas d'évolution) ---
+        add("artikodin", "Artikodin", 144, 4, "arti", 90, 95, 112, 85, null, ICE, FLYING);
+        add("electhor", "Électhor", 145, 4, "elec", 90, 125, 87, 100, null, ELECTRIC, FLYING);
+        add("sulfura", "Sulfura", 146, 4, "sulf", 90, 125, 87, 90, null, FIRE, FLYING);
+        add("mewtwo", "Mewtwo", 150, 4, "mewt", 106, 154, 90, 130, null, PSYCHIC);
+        add("rayquaza", "Rayquaza", 384, 4, "rayq", 105, 150, 90, 95, null, DRAGON, FLYING);
+        add("darkrai", "Darkrai", 491, 4, "dark", 70, 135, 90, 125, null, DARK);
+
         // --- Kit de chaque lignée : portée d'attaque (en cases) et capacité unique ---
+        kit("arti", 1, Ability.GRAND_FROID);
+        kit("elec", 4, Ability.FATAL_FOUDRE);
+        kit("sulf", 3, Ability.DEFLAGRATION);
+        kit("mewt", 3, Ability.FRAPPE_PSY);
+        kit("rayq", 1, Ability.DRACO_ASCENSION);
+        kit("dark", 1, Ability.TROU_NOIR);
         kit("bulbi", 2, Ability.GIGA_SANGSUE);
         kit("sala", 2, Ability.LANCE_FLAMMES);
         kit("cara", 1, Ability.REPLI);
@@ -138,17 +154,17 @@ public final class Pokedex {
         kit("absol", 1, Ability.TRANCHE_NUIT);
         kit("grik", 1, Ability.SEISME);
         // --- Classe (rôle) de chaque lignée ---
-        role(Trait.GUARDIAN, "cara", "raca", "onix", "ronf", "obal", "gale");
-        role(Trait.FIGHTER, "mach", "osse", "cani", "mini", "riol", "grik", "ptit");
-        role(Trait.ASSASSIN, "fant", "etou", "ratt", "inse", "farf", "absol");
-        role(Trait.MYSTIC, "abra", "magn", "lokh", "myst", "goup", "tars");
-        role(Trait.MARKSMAN, "pika", "sala", "larv", "bulbi", "remo", "brin");
+        role(Trait.GUARDIAN, "arti", "cara", "raca", "onix", "ronf", "obal", "gale");
+        role(Trait.FIGHTER, "rayq", "mach", "osse", "cani", "mini", "riol", "grik", "ptit");
+        role(Trait.ASSASSIN, "dark", "fant", "etou", "ratt", "inse", "farf", "absol");
+        role(Trait.MYSTIC, "sulf", "mewt", "abra", "magn", "lokh", "myst", "goup", "tars");
+        role(Trait.MARKSMAN, "elec", "pika", "sala", "larv", "bulbi", "remo", "brin");
         for (Species s : ALL.values()) {
             if (!ABILITY.containsKey(s.line)) throw new IllegalStateException("Lignée sans kit : " + s.line);
             if (!ROLE.containsKey(s.line)) throw new IllegalStateException("Lignée sans classe : " + s.line);
         }
 
-        for (int i = 0; i < 3; i++) SHOP_BY_TIER.add(new ArrayList<Species>());
+        for (int i = 0; i < GameState.TIERS; i++) SHOP_BY_TIER.add(new ArrayList<Species>());
         List<String> evolved = new ArrayList<String>();
         for (Species s : ALL.values()) if (s.evolvesTo != null) evolved.add(s.evolvesTo);
         for (Species s : ALL.values()) {
@@ -173,6 +189,11 @@ public final class Pokedex {
     /** Vrai si la lignée est un Pokémon de départ (Bulbizarre, Salamèche, Carapuce, Pikachu, Brindibou). */
     public static boolean isStarter(String line) {
         return STARTERS.contains(line);
+    }
+
+    /** Vrai si la lignée est légendaire (tier 4) : Artikodin, Électhor, Sulfura, Mewtwo, Rayquaza, Darkrai. */
+    public static boolean isLegendary(String line) {
+        return LEGENDARIES.contains(line);
     }
 
     private static void kit(String line, int range, Ability ability) {

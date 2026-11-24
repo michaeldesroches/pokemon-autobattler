@@ -11,7 +11,8 @@ public enum Trait {
     ASSASSIN("Assassin", 0x9B6BE0, false, new int[]{2, 3}, "Plonge sur l'arrière-ligne"),
     MYSTIC("Mystique", 0xE05BB5, false, new int[]{2, 4}, "Capacités puissantes, à l'arrière"),
     MARKSMAN("Tireur", 0x3FB27F, false, new int[]{2, 3}, "Dégâts à distance, à l'arrière"),
-    STARTER("Starter", 0xF5C542, false, new int[]{3}, "Pokémon de départ");
+    STARTER("Starter", 0xF5C542, false, new int[]{3}, "Pokémon de départ"),
+    LEGENDARY("Légendaire", 0x6FD8E8, false, new int[]{1, 2}, "Pokémon légendaire (tier 4)");
 
     public final String label;
     public final int rgb;
@@ -35,7 +36,7 @@ public enum Trait {
 
     /** Vrai pour les classes qui sont un rôle (toutes sauf Starter). */
     public boolean isRole() {
-        return this != STARTER;
+        return this != STARTER && this != LEGENDARY;
     }
 
     /**
@@ -57,6 +58,7 @@ public enum Trait {
             case MYSTIC: return high ? "+70% puissance, +20 mana au départ" : "+35% puissance, +20 mana au départ";
             case MARKSMAN: return high ? "+1 portée, +30% vitesse d'attaque" : "+20% vitesse d'attaque";
             case STARTER: return "+20% PV et Attaque";
+            case LEGENDARY: return high ? "Toute l'équipe : +10% Attaque, +15% PV" : "Toute l'équipe : +10% Attaque";
             default: return "";
         }
     }
