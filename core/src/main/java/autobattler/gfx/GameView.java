@@ -93,6 +93,8 @@ public final class GameView extends InputAdapter {
     private static final Color TIER1 = Canvas.rgb(0x7D8799);
     private static final Color TIER2 = Canvas.rgb(0x3FA36B);
     private static final Color TIER3 = Canvas.rgb(0x9B59D0);
+    /** Légendaires : couleur de la classe Légendaire. */
+    private static final Color TIER4 = Canvas.rgb(Trait.LEGENDARY.rgb);
 
     private final Assets assets;
     private final PmdSprites pmd;
@@ -1270,7 +1272,8 @@ public final class GameView extends InputAdapter {
             float hx = x + 76;
             g.text(bold(22), sp.name, hx, y + 20, TEXT);
             if (stars > 1) g.text(bold(15), stars + "★", hx + g.width(bold(22), sp.name) + 8, y + 19, GOLD);
-            g.right(regular(12), "Tier " + sp.tier, RIGHT.x + RIGHT.w - 14, y + 18, MUTED);
+            g.right(regular(12), sp.tier >= 4 ? "Légendaire" : "Tier " + sp.tier, RIGHT.x + RIGHT.w - 14, y + 18,
+                    sp.tier >= 4 ? TIER4 : MUTED);
             float bx = hx;
             for (PType t : sp.types) {
                 typeBadge(g, t, bx, y + 26, 1f);
@@ -1412,11 +1415,12 @@ public final class GameView extends InputAdapter {
         int[] odds = GameState.shopOdds(state.level);
         g.text(regular(12), "Tiers : ", p.x + 12, p.y + 76, MUTED);
         float ox = p.x + 54;
-        Color[] tc = {TIER1, TIER2, TIER3};
-        for (int i = 0; i < 3; i++) {
+        Color[] tc = {TIER1, TIER2, TIER3, TIER4};
+        for (int i = 0; i < GameState.TIERS; i++) {
+            if (i == 3 && odds[i] == 0) break;
             String s = odds[i] + "%";
             g.text(bold(12), s, ox, p.y + 76, tc[i].cpy().lerp(WHITE, 0.35f));
-            ox += g.width(bold(12), s) + 10;
+            ox += g.width(bold(12), s) + (odds[3] > 0 ? 6 : 10);
         }
         g.text(bold(22), "● " + state.gold, p.x + 12, p.y + 112, GOLD);
         int interest = Math.min(5, state.gold / 10);
@@ -1434,10 +1438,15 @@ public final class GameView extends InputAdapter {
             g.round(r.x, r.y, r.w, r.h, PANEL);
             if (sp == null) continue;
             if (!prep) g.alpha = 0.4f;
-            Color tierColor = sp.tier == 1 ? TIER1 : sp.tier == 2 ? TIER2 : TIER3;
+            Color tierColor = sp.tier == 1 ? TIER1 : sp.tier == 2 ? TIER2 : sp.tier == 3 ? TIER3 : TIER4;
             boolean hover = r.contains(mx, my) && prep;
             g.round(r.x, r.y, r.w, 60, g.fade(tierColor, 0.25f));
             g.outline(r.x, r.y, r.w, r.h, hover ? GOLD : tierColor);
+            if (sp.tier >= 4) {
+                // légendaire : halo qui pulse derrière le portrait
+                float pulse = 0.35f + 0.25f * (float) Math.sin(clock * 3 + i);
+                g.centeredTinted(assets.glow, r.x + 34, r.y + 34, 40, 40, g.fade(TIER4, pulse));
+            }
             drawPortrait(g, sp, r.x + 10, r.y + 10, 48);
             drawPokemon(g, sp, r.x + r.w - 36, r.y + 60, 0.7f, 1, "Idle", clock + i * 0.5f, true);
             g.text(bold(13), sp.name, r.x + 10, r.y + 80, TEXT);
@@ -1450,7 +1459,8 @@ public final class GameView extends InputAdapter {
             roleBadge(g, role, r.x + 17, r.y + 126, 7f);
             g.text(bold(12), role.label, r.x + 29, r.y + 130, Canvas.rgb(role.rgb).lerp(WHITE, 0.3f));
             if (Pokedex.isStarter(sp.line)) roleBadge(g, Trait.STARTER, r.x + 37 + g.width(bold(12), role.label), r.y + 126, 6f);
-            g.right(bold(15), "● " + sp.tier, r.x + r.w - 10, r.y + 131, state.gold >= sp.tier ? GOLD : ACCENT);
+            if (Pokedex.isLegendary(sp.line)) roleBadge(g, Trait.LEGENDARY, r.x + 37 + g.width(bold(12), role.label), r.y + 126, 6f);
+            g.right(bold(15), "● " + sp.cost(), r.x + r.w - 10, r.y + 131, state.gold >= sp.cost() ? GOLD : ACCENT);
             g.alpha = 1f;
         }
     }

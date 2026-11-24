@@ -5,6 +5,8 @@ import java.util.Map;
 /** Un Pokémon pendant un combat : stats finales, position sur la grille hexagonale, mana et statuts. */
 public final class Fighter {
     private static final double[] HP_STAR = {1.0, 1.8, 3.2};
+    /** Multiplicateurs propres aux légendaires (réglés par duels contre des tier 3 évolués 2★). */
+    static double LEGENDARY_HP = 1.5, LEGENDARY_ATK = 1.35;
     private static final double[] ATK_STAR = {1.0, 1.5, 2.2};
     /** Durée d'un déplacement d'une case, en secondes. */
     public static final double MOVE_TIME = 0.45;
@@ -63,6 +65,11 @@ public final class Fighter {
         int st = unit.stars - 1;
         maxHp = (s.hp * 3 + 60) * HP_STAR[st];
         atk = s.atk * ATK_STAR[st];
+        if (Pokedex.isLegendary(s.line)) {
+            // un légendaire 1★ (5 or, 4 exemplaires) doit valoir à peu près un tier 3 évolué 2★
+            maxHp *= LEGENDARY_HP;
+            atk *= LEGENDARY_ATK;
+        }
         def = s.def;
         maxMana = ability.maxMana;
         mana = ability.startMana;
@@ -91,7 +98,14 @@ public final class Fighter {
                 default: break;
             }
         }
+        // Légendaire : bonus pour toute l'équipe, pas seulement pour les légendaires
+        Integer legend = traits == null ? null : traits.get(Trait.LEGENDARY);
+        if (legend != null) {
+            atk *= 1.10;
+            if (legend >= 2) maxHp *= 1.15;
+        }
         for (Trait t : s.traits()) {
+            if (t == Trait.LEGENDARY) continue;
             Integer lvlObj = traits == null ? null : traits.get(t);
             int lvl = lvlObj == null ? 0 : lvlObj;
             if (lvl == 0) continue;

@@ -47,7 +47,13 @@ public final class Species {
 
     /** Classes de l'espèce : son rôle, plus Starter le cas échéant. */
     public Trait[] traits() {
+        if (Pokedex.isLegendary(line)) return new Trait[]{role(), Trait.LEGENDARY};
         return Pokedex.isStarter(line) ? new Trait[]{role(), Trait.STARTER} : new Trait[]{role()};
+    }
+
+    /** Prix en boutique : le tier, sauf les légendaires (tier 4) qui coûtent 5. */
+    public int cost() {
+        return tier >= 4 ? 5 : tier;
     }
 
     public Ability ability() {

@@ -36,7 +36,14 @@ public enum Ability {
     AURASPHERE("Aurasphère", "240% de dégâts, se soigne de 15% de ses PV max.", 70, 10),
     COUP_BAS("Coup Bas", "180% de dégâts, 320% si la cible a moins de la moitié de ses PV.", 60, 10),
     TRANCHE_NUIT("Tranche-Nuit", "Coup critique assuré : 200% de dégâts à la cible et aux ennemis adjacents.", 80, 20),
-    SEISME("Séisme", "150% de dégâts à tous les ennemis à 2 cases.", 90, 30);
+    SEISME("Séisme", "150% de dégâts à tous les ennemis à 2 cases.", 90, 30),
+    // légendaires
+    GRAND_FROID("Grand Froid", "Gèle 1,5 s les ennemis à 2 cases ; bouclier de 25% PV à lui et ses voisins.", 90, 40),
+    FATAL_FOUDRE("Fatal-Foudre", "Foudroie les 3 ennemis aux PV les plus hauts : 220% de dégâts, paralysie 2 s.", 80, 20),
+    DEFLAGRATION("Déflagration", "260% de dégâts à la cible et ses voisins, brûlure 4 s.", 90, 30),
+    FRAPPE_PSY("Frappe Psy", "280% de dégâts à la cible, 120% aux ennemis adjacents.", 90, 10),
+    DRACO_ASCENSION("Draco Ascension", "260% de dégâts et +15% d'Attaque (cumulable).", 80, 10),
+    TROU_NOIR("Trou Noir", "260% à la cible, puis endort 2,5 s les ennemis à 2 cases.", 70, 20);
 
     public final String label;
     public final String description;

@@ -321,12 +321,12 @@ def gen_fx(ui):
 
 def gen_role_icons(ui):
     """Icônes de classe (blanches, teintées à l'affichage), 6 cases de 64x64 dans l'ordre de Trait :
-    Gardien (bouclier), Combattant (poing/épée), Assassin (dague), Mystique (étincelle), Tireur (cible), Starter (étoile)."""
+    Gardien (bouclier), Combattant (poing/épée), Assassin (dague), Mystique (étincelle), Tireur (cible), Starter (étoile), Légendaire (couronne)."""
     import math
     s, n = 4, 64
     N = n * s
     W = (255, 255, 255, 255)
-    strip = Image.new("RGBA", (n * 6, n), (0, 0, 0, 0))
+    strip = Image.new("RGBA", (n * 7, n), (0, 0, 0, 0))
 
     def canvas():
         im = Image.new("RGBA", (N, N), (0, 0, 0, 0))
@@ -381,6 +381,12 @@ def gen_role_icons(ui):
         rr = .46 if k % 2 == 0 else .19
         pts.append((.5 + rr * math.cos(a), .54 - rr * math.sin(a)))
     d.polygon(P(*pts), fill=W)
+    icons.append(im)
+
+    # Légendaire : couronne
+    im, d = canvas()
+    d.polygon(P((.12, .30), (.32, .52), (.5, .18), (.68, .52), (.88, .30), (.80, .76), (.20, .76)), fill=W)
+    d.rectangle(P((.20, .80), (.80, .90)), fill=W)
     icons.append(im)
 
     for i, im in enumerate(icons):
