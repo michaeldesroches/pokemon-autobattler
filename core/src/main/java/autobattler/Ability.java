@@ -38,12 +38,12 @@ public enum Ability {
     TRANCHE_NUIT("Tranche-Nuit", "Coup critique assuré : 200% de dégâts à la cible et aux ennemis adjacents.", 80, 20),
     SEISME("Séisme", "150% de dégâts à tous les ennemis à 2 cases.", 90, 30),
     // légendaires
-    GRAND_FROID("Grand Froid", "Gèle 1,5 s les ennemis à 2 cases ; bouclier de 25% PV à lui et ses voisins.", 90, 40),
-    FATAL_FOUDRE("Fatal-Foudre", "Foudroie les 3 ennemis aux PV les plus hauts : 220% de dégâts, paralysie 2 s.", 80, 20),
-    DEFLAGRATION("Déflagration", "260% de dégâts à la cible et ses voisins, brûlure 4 s.", 90, 30),
-    FRAPPE_PSY("Frappe Psy", "280% de dégâts à la cible, 120% aux ennemis adjacents.", 90, 10),
-    DRACO_ASCENSION("Draco Ascension", "260% de dégâts et +15% d'Attaque (cumulable).", 80, 10),
-    TROU_NOIR("Trou Noir", "260% à la cible, puis endort 2,5 s les ennemis à 2 cases.", 70, 20);
+    GRAND_FROID("Grand Froid", "Gèle 1 s les ennemis adjacents ; bouclier de 20% PV à lui et ses voisins.", 90, 40),
+    FATAL_FOUDRE("Fatal-Foudre", "Foudroie les 3 ennemis aux PV les plus hauts : 160% de dégâts, paralysie 1 s.", 80, 20),
+    DEFLAGRATION("Déflagration", "200% de dégâts à la cible et ses voisins, brûlure 3 s.", 90, 30),
+    FRAPPE_PSY("Frappe Psy", "240% de dégâts à la cible, 100% aux ennemis adjacents.", 90, 10),
+    DRACO_ASCENSION("Draco Ascension", "220% de dégâts et +10% d'Attaque (cumulable).", 80, 10),
+    TROU_NOIR("Trou Noir", "220% à la cible, puis endort 1,5 s ses voisins.", 70, 20);
 
     public final String label;
     public final String description;

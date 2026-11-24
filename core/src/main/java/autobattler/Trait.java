@@ -58,7 +58,7 @@ public enum Trait {
             case MYSTIC: return high ? "+70% puissance, +20 mana au départ" : "+35% puissance, +20 mana au départ";
             case MARKSMAN: return high ? "+1 portée, +30% vitesse d'attaque" : "+20% vitesse d'attaque";
             case STARTER: return "+20% PV et Attaque";
-            case LEGENDARY: return high ? "Toute l'équipe : +10% Attaque, +15% PV" : "Toute l'équipe : +10% Attaque";
+            case LEGENDARY: return high ? "Toute l'équipe : +5% Attaque et PV" : "Toute l'équipe : +5% Attaque";
             default: return "";
         }
     }

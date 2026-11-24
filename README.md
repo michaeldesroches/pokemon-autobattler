@@ -27,7 +27,7 @@ Auto battler façon TFT / Super Auto Pets avec des Pokémon de 1re génération 
 - **Économie** : +5 or par manche, +1 par tranche de 10 or (max +5), +1 en cas de victoire, +1 en série de 3+. Relancer la boutique coûte 1 or. Vendre rembourse ce que tu as investi (et rend ses objets).
 - **Défaite** : tu perds `2 + manche / 2 + Pokémon adverses survivants` PV (60 PV au départ, moitié moins contre les sauvages). Au temps limite, les deux joueurs perdent.
 - La **table des types** s'applique (les immunités sont adoucies à x0.25).
-- **Légendaires** (tier 4, 5 or, à partir du niveau 7 : 5 / 10 / 20 % aux niveaux 7 / 8 / 9) : Artikodin (Gardien, Grand Froid), Électhor (Tireur, Fatal-Foudre), Sulfura (Mystique, Déflagration), Mewtwo (Mystique, Frappe Psy), Rayquaza (Combattant, Draco Ascension), Darkrai (Assassin, Trou Noir). 4 exemplaires chacun, pas d'évolution, stats renforcées : un légendaire 1★ vaut un tier 3 évolué 2★.
+- **Légendaires** (tier 4, 5 or, à partir du niveau 7 : 5 / 10 / 20 % aux niveaux 7 / 8 / 9) : Artikodin (Gardien, Grand Froid), Électhor (Tireur, Fatal-Foudre), Sulfura (Mystique, Déflagration), Mewtwo (Mystique, Frappe Psy), Rayquaza (Combattant, Draco Ascension), Darkrai (Assassin, Trou Noir). 4 exemplaires chacun, pas d'évolution, un peu plus forts qu'un tier 3 évolué 2★.
 - **Pokémon des générations suivantes** : quelques lignées choisies parce qu'elles incarnent un rôle (Galekid, Obalie, Riolu, Griknot, Farfuret, Absol, Étourmi, Tarsal, Rémoraid, Larvibule, Brindibou ; les trois en plus remplacent Otaria, Roucool et Chenipan, qui collaient mal à leur classe), et des évolutions apparues plus tard (Onix → Steelix, Insécateur → Cizayox, Magnéton → Magnézone). Le type Ténèbres arrive avec elles (sans le type Fée : Gardevoir reste Psy).
 - **Classes** : chaque lignée a un rôle (Gardien, Combattant, Assassin, Mystique, Tireur), affiché par une icône de couleur sur le plateau, le banc et la boutique. Les Gardiens et Combattants vont devant, les Mystiques et Tireurs derrière ; un contour orange signale un Pokémon mal placé. À partir de 2 Assassins, ils sautent sur l'arrière-ligne adverse au début du combat.
 
@@ -41,7 +41,7 @@ Auto battler façon TFT / Super Auto Pets avec des Pokémon de 1re génération 
 | Mystique | Abra, Magnéti (→ Magnézone), Lokhlass, Mystherbe, Goupix, Tarsal | 2 / 4 | +35 % / +70 % puissance des capacités, +20 mana au départ |
 | Tireur | Pikachu, Salamèche, Larvibule, Bulbizarre, Rémoraid, Brindibou | 2 / 3 | +20 % / +30 % vitesse d'attaque (et +1 portée au 2e palier) |
 | Starter | Bulbizarre, Salamèche, Carapuce, Pikachu, Brindibou | 3 | +20 % PV et Attaque |
-| Légendaire | Artikodin, Électhor, Sulfura, Mewtwo, Rayquaza, Darkrai | 1 / 2 | **Toute l'équipe** : +10 % Attaque (et +15 % PV avec 2 légendaires) |
+| Légendaire | Artikodin, Électhor, Sulfura, Mewtwo, Rayquaza, Darkrai | 1 / 2 | **Toute l'équipe** : +5 % Attaque (et +5 % PV avec 2 légendaires) |
 
 ### Synergies (lignées distinctes d'un même type sur le plateau)
 

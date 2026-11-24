@@ -6,7 +6,9 @@ import java.util.Map;
 public final class Fighter {
     private static final double[] HP_STAR = {1.0, 1.8, 3.2};
     /** Multiplicateurs propres aux légendaires (réglés par duels contre des tier 3 évolués 2★). */
-    static double LEGENDARY_HP = 1.5, LEGENDARY_ATK = 1.35;
+    static double LEGENDARY_HP = 1.15, LEGENDARY_ATK = 1.05;
+    /** Bonus d'équipe de la classe Légendaire (Attaque au palier 1, PV au palier 2). */
+    static double LEGEND_TEAM_ATK = 0.05, LEGEND_TEAM_HP = 0.05;
     private static final double[] ATK_STAR = {1.0, 1.5, 2.2};
     /** Durée d'un déplacement d'une case, en secondes. */
     public static final double MOVE_TIME = 0.45;
@@ -101,8 +103,8 @@ public final class Fighter {
         // Légendaire : bonus pour toute l'équipe, pas seulement pour les légendaires
         Integer legend = traits == null ? null : traits.get(Trait.LEGENDARY);
         if (legend != null) {
-            atk *= 1.10;
-            if (legend >= 2) maxHp *= 1.15;
+            atk *= 1 + LEGEND_TEAM_ATK;
+            if (legend >= 2) maxHp *= 1 + LEGEND_TEAM_HP;
         }
         for (Trait t : s.traits()) {
             if (t == Trait.LEGENDARY) continue;
