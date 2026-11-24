@@ -466,13 +466,13 @@ public final class Battle {
                 break;
             // ---- légendaires
             case GRAND_FROID:
-                for (Fighter o : enemiesWithin(f, f.cell, 2)) {
+                for (Fighter o : enemiesWithin(f, f.cell, 1)) {
                     hit(f, o, 0.8, true);
-                    freeze(o, 1.5);
+                    freeze(o, 1.0);
                 }
                 for (Fighter o : fighters)
-                    if (o.alive && o.player == f.player && Hex.distance(f.cell, o.cell) <= 1) addShield(o, 0.25 * o.maxHp, 4);
-                events.add(new Event(Kind.AREA, f, t, 0, 1, true, null, f.cell, 2, PType.ICE));
+                    if (o.alive && o.player == f.player && Hex.distance(f.cell, o.cell) <= 1) addShield(o, 0.20 * o.maxHp, 3);
+                events.add(new Event(Kind.AREA, f, t, 0, 1, true, null, f.cell, 1, PType.ICE));
                 break;
             case FATAL_FOUDRE: {
                 List<Fighter> foes = enemiesWithin(f, f.cell, 99);
@@ -484,36 +484,36 @@ public final class Battle {
                 });
                 for (int i = 0; i < Math.min(3, foes.size()); i++) {
                     Fighter o = foes.get(i);
-                    hit(f, o, 2.2, true);
-                    paralyze(o, 2);
+                    hit(f, o, 1.6, true);
+                    paralyze(o, 1);
                     events.add(new Event(Kind.AREA, f, o, 0, 1, true, null, o.cell, 0, PType.ELECTRIC));
                 }
                 break;
             }
             case DEFLAGRATION:
                 for (Fighter o : enemiesWithin(f, t.cell, 1)) {
-                    hit(f, o, 2.6, true);
-                    burn(o, 0.04, 4);
+                    hit(f, o, 2.0, true);
+                    burn(o, 0.03, 3);
                 }
                 events.add(new Event(Kind.AREA, f, t, 0, 1, true, null, t.cell, 1, PType.FIRE));
                 break;
             case FRAPPE_PSY:
-                for (Fighter o : enemiesWithin(f, t.cell, 1)) hit(f, o, o == t ? 2.8 : 1.2, true);
+                for (Fighter o : enemiesWithin(f, t.cell, 1)) hit(f, o, o == t ? 2.4 : 1.0, true);
                 events.add(new Event(Kind.AREA, f, t, 0, 1, true, null, t.cell, 1, PType.PSYCHIC));
                 break;
             case DRACO_ASCENSION:
-                hit(f, t, 2.6, true);
-                f.atk *= 1.15;
+                hit(f, t, 2.2, true);
+                f.atk *= 1.10;
                 status(f, "Attaque +");
                 break;
             case TROU_NOIR:
-                hit(f, t, 2.6, true);
-                for (Fighter o : enemiesWithin(f, t.cell, 2)) {
+                hit(f, t, 2.2, true);
+                for (Fighter o : enemiesWithin(f, t.cell, 1)) {
                     if (!o.alive || o.ccImmune) continue;
-                    o.sleep = Math.max(o.sleep, 2.5);
+                    o.sleep = Math.max(o.sleep, 1.5);
                     status(o, "Endormi");
                 }
-                events.add(new Event(Kind.AREA, f, t, 0, 1, true, null, t.cell, 2, PType.DARK));
+                events.add(new Event(Kind.AREA, f, t, 0, 1, true, null, t.cell, 1, PType.DARK));
                 break;
             default:
                 hit(f, t, 2.5, true);

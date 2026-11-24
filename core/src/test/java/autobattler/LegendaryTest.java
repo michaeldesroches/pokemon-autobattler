@@ -62,10 +62,10 @@ class LegendaryTest {
         Fighter without = new Fighter(machoc, true, 0, 0, null, Synergies.traitLevels(team));
         team.add(new Unit(Pokedex.get("artikodin"), 1, 5));
         Fighter with1 = new Fighter(machoc, true, 0, 0, null, Synergies.traitLevels(team));
-        assertEquals(without.atk * 1.10, with1.atk, 1e-6);
+        assertEquals(without.atk * 1.05, with1.atk, 1e-6);
         assertEquals(without.maxHp, with1.maxHp, 1e-6);
         team.add(new Unit(Pokedex.get("darkrai"), 1, 5));
         Fighter with2 = new Fighter(machoc, true, 0, 0, null, Synergies.traitLevels(team));
-        assertEquals(without.maxHp * 1.15, with2.maxHp, 1e-6);
+        assertEquals(without.maxHp * 1.05, with2.maxHp, 1e-6);
     }
 }
